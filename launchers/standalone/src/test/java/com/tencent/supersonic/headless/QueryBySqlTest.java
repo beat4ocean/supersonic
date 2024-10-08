@@ -17,7 +17,7 @@ public class QueryBySqlTest extends BaseTest {
 
     @Test
     public void testDetailQuery() throws Exception {
-        SemanticQueryResp semanticQueryResp = queryBySql("SELECT 用户,访问次数 FROM 超音数PVUV统计 WHERE 用户='alice' ");
+        SemanticQueryResp semanticQueryResp = queryBySql("SELECT 用户,访问次数 FROM 智能BIPVUV统计 WHERE 用户='alice' ");
 
         assertEquals(2, semanticQueryResp.getColumns().size());
         QueryColumn firstColumn = semanticQueryResp.getColumns().get(0);
@@ -29,7 +29,7 @@ public class QueryBySqlTest extends BaseTest {
 
     @Test
     public void testSumQuery() throws Exception {
-        SemanticQueryResp semanticQueryResp = queryBySql("SELECT SUM(访问次数) AS 访问次数 FROM 超音数PVUV统计 ");
+        SemanticQueryResp semanticQueryResp = queryBySql("SELECT SUM(访问次数) AS 访问次数 FROM 智能BIPVUV统计 ");
 
         assertEquals(1, semanticQueryResp.getColumns().size());
         QueryColumn queryColumn = semanticQueryResp.getColumns().get(0);
@@ -39,7 +39,7 @@ public class QueryBySqlTest extends BaseTest {
 
     @Test
     public void testGroupByQuery() throws Exception {
-        SemanticQueryResp result = queryBySql("SELECT 部门, SUM(访问次数) AS 访问次数 FROM 超音数PVUV统计  GROUP BY 部门 ");
+        SemanticQueryResp result = queryBySql("SELECT 部门, SUM(访问次数) AS 访问次数 FROM 智能BIPVUV统计  GROUP BY 部门 ");
         assertEquals(2, result.getColumns().size());
         QueryColumn firstColumn = result.getColumns().get(0);
         QueryColumn secondColumn = result.getColumns().get(1);

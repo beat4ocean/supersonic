@@ -324,7 +324,7 @@ class SqlReplaceHelperTest {
                         + " ORDER BY play_count DESC LIMIT 11", replaceSql);
 
         replaceSql = SqlReplaceHelper.replaceFields(
-                "select 部门,用户 from 超音数 where 数据日期 = '2023-08-08' and 用户 ='alice'"
+                "select 部门,用户 from 智能BI where 数据日期 = '2023-08-08' and 用户 ='alice'"
                         + " and 发布日期 ='11' order by 访问次数 desc limit 1", fieldToBizName);
         replaceSql = SqlReplaceHelper.replaceFunction(replaceSql);
 

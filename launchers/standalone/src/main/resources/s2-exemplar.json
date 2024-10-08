@@ -2,25 +2,25 @@
     {
         "question": "比较jackjchen和robinlee今年以来的访问次数",
         "sideInfo": "CurrentDate=[2020-12-01],DomainTerms=[<核心用户 COMMENT '核心用户指tom和lucy'>],PriorKnowledge=[数据日期 是分区时间且格式是yyyy-MM-dd]",
-        "dbSchema": "Table=[超音数产品], Metrics=[<访问次数 ALIAS 'pv' COMMENT '一段时间内用户的访问次数' AGGREGATE 'SUM'>,<访问用户数 ALIAS 'UV,访问人数,' COMMENT '访问的用户个数' AGGREGATE 'COUNT'>,<人均访问次数 ALIAS '平均访问次数,' COMMENT '每个用户平均访问的次数'>], Dimensions=[<数据日期>], Values[<用户='jackjchen'>,<用户='robinlee'>]",
-        "sql": "SELECT 用户, 访问次数 FROM 超音数产品 WHERE 用户 IN ('jackjchen', 'robinlee') AND 数据日期 >= '2020-01-01' AND 数据日期 <= '2020-12-01'"
+        "dbSchema": "Table=[智能BI产品], Metrics=[<访问次数 ALIAS 'pv' COMMENT '一段时间内用户的访问次数' AGGREGATE 'SUM'>,<访问用户数 ALIAS 'UV,访问人数,' COMMENT '访问的用户个数' AGGREGATE 'COUNT'>,<人均访问次数 ALIAS '平均访问次数,' COMMENT '每个用户平均访问的次数'>], Dimensions=[<数据日期>], Values[<用户='jackjchen'>,<用户='robinlee'>]",
+        "sql": "SELECT 用户, 访问次数 FROM 智能BI产品 WHERE 用户 IN ('jackjchen', 'robinlee') AND 数据日期 >= '2020-01-01' AND 数据日期 <= '2020-12-01'"
     },
     {
-        "question": "超音数近12个月访问人数 按部门",
+        "question": "智能BI近12个月访问人数 按部门",
         "sideInfo": "CurrentDate=[2022-11-06],PriorKnowledge=[数据日期 是分区时间且格式是yyyy-MM-dd]",
-        "dbSchema": "Table=[超音数产品], Metrics=[<访问次数 ALIAS 'pv' COMMENT '一段时间内用户的访问次数' AGGREGATE 'SUM'>,<访问用户数 ALIAS 'UV,访问人数,' COMMENT '访问的用户个数' AGGREGATE 'COUNT'>,<人均访问次数 ALIAS '平均访问次数,' COMMENT '每个用户平均访问的次数'>], Dimensions=[<部门>,<数据日期>], Values=[]",
-        "sql": "SELECT 部门, 数据日期, 访问人数 FROM 超音数产品 WHERE 数据日期 >= '2021-11-06' AND 数据日期 <= '2022-11-06'"
+        "dbSchema": "Table=[智能BI产品], Metrics=[<访问次数 ALIAS 'pv' COMMENT '一段时间内用户的访问次数' AGGREGATE 'SUM'>,<访问用户数 ALIAS 'UV,访问人数,' COMMENT '访问的用户个数' AGGREGATE 'COUNT'>,<人均访问次数 ALIAS '平均访问次数,' COMMENT '每个用户平均访问的次数'>], Dimensions=[<部门>,<数据日期>], Values=[]",
+        "sql": "SELECT 部门, 数据日期, 访问人数 FROM 智能BI产品 WHERE 数据日期 >= '2021-11-06' AND 数据日期 <= '2022-11-06'"
     },
     {
-        "question": "超音数过去90天美术部、技术研发部的访问时长",
+        "question": "智能BI过去90天美术部、技术研发部的访问时长",
         "sideInfo": "CurrentDate=[2023-04-21],PriorKnowledge=[数据日期 是分区时间且格式是yyyy-MM-dd]",
-        "dbSchema": "Table=[超音数产品], Metrics=[<访问时长 COMMENT '一段时间内用户的访问时长' AGGREGATE 'SUM'>], Dimensions=[<数据日期>], Values=[<部门='美术部'>,<部门='技术研发部'>]",
-        "sql": "SELECT 部门, 访问时长 FROM 超音数产品 WHERE 部门 IN ('美术部', '技术研发部') AND 数据日期 >= '2023-01-20' AND 数据日期 <= '2023-04-21'"
+        "dbSchema": "Table=[智能BI产品], Metrics=[<访问时长 COMMENT '一段时间内用户的访问时长' AGGREGATE 'SUM'>], Dimensions=[<数据日期>], Values=[<部门='美术部'>,<部门='技术研发部'>]",
+        "sql": "SELECT 部门, 访问时长 FROM 智能BI产品 WHERE 部门 IN ('美术部', '技术研发部') AND 数据日期 >= '2023-01-20' AND 数据日期 <= '2023-04-21'"
     },
     {
-        "question": "超音数访问时长小于1小时，且来自美术部的用户是哪些",
+        "question": "智能BI访问时长小于1小时，且来自美术部的用户是哪些",
         "sideInfo": "CurrentDate=[2023-07-31],DomainTerms=[<核心用户 COMMENT '用户为tom和lucy'>],PriorKnowledge=[数据日期 是分区时间且格式是yyyy-MM-dd]",
-        "dbSchema": "Table:[超音数产品], Metrics:[<访问时长 COMMENT '一段时间内用户的访问时长' AGGREGATE 'SUM'>], Dimensions:[<用户>,<数据日期>], Values:[<部门='美术部'>]",
+        "dbSchema": "Table:[智能BI产品], Metrics:[<访问时长 COMMENT '一段时间内用户的访问时长' AGGREGATE 'SUM'>], Dimensions:[<用户>,<数据日期>], Values:[<部门='美术部'>]",
         "sql": "SELECT 用户 FROM 超音数产品 WHERE 部门 = '美术部' AND 访问时长 < 1"
     },
     {

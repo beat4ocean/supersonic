@@ -29,7 +29,7 @@ type Result<T> = {
   msg: string;
 };
 
-// 新请求器下的超音数分页接口声明泛型
+// 新请求器下的智能BI分页接口声明泛型
 type TPaginationResponse<T> = {
   content: (T & AuthSdkType.AuthCodesItem)[];
   current: number;

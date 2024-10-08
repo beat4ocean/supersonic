@@ -23,12 +23,12 @@ public class MetaDiscoveryTest extends BaseTest {
         queryMapReq.setQueryText("对比alice和lucy的访问次数");
         queryMapReq.setTopN(10);
         queryMapReq.setUser(User.getFakeUser());
-        queryMapReq.setDataSetNames(Collections.singletonList("超音数数据集"));
+        queryMapReq.setDataSetNames(Collections.singletonList("智能BI数据集"));
         MapInfoResp mapMeta = chatLayerService.map(queryMapReq);
 
         Assertions.assertNotNull(mapMeta);
-        Assertions.assertNotEquals(0, mapMeta.getDataSetMapInfo().get("超音数数据集").getMapFields());
-        Assertions.assertNotEquals(0, mapMeta.getDataSetMapInfo().get("超音数数据集").getTopFields());
+        Assertions.assertNotEquals(0, mapMeta.getDataSetMapInfo().get("智能BI数据集").getMapFields());
+        Assertions.assertNotEquals(0, mapMeta.getDataSetMapInfo().get("智能BI数据集").getTopFields());
     }
 
     @Test
@@ -46,10 +46,10 @@ public class MetaDiscoveryTest extends BaseTest {
     @Test
     public void testGetMapMeta3() throws Exception {
         QueryMapReq queryMapReq = new QueryMapReq();
-        queryMapReq.setQueryText("超音数访问次数最高的部门");
+        queryMapReq.setQueryText("智能BI访问次数最高的部门");
         queryMapReq.setTopN(10);
         queryMapReq.setUser(User.getFakeUser());
-        queryMapReq.setDataSetNames(Collections.singletonList("超音数"));
+        queryMapReq.setDataSetNames(Collections.singletonList("智能BI"));
         queryMapReq.setQueryDataType(QueryDataType.METRIC);
         MapInfoResp mapMeta = chatLayerService.map(queryMapReq);
         Assert.assertNotNull(mapMeta);

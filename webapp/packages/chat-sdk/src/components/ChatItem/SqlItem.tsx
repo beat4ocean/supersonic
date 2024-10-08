@@ -148,7 +148,7 @@ ${format(sqlInfo.querySQL)}
     if (sqlInfo.querySQL) {
       text += getQuerySQLText();
     }
-    exportTextFile(text, `supersonic-debug-${agentId}-${queryId}.log`);
+    exportTextFile(text, `smartbi-debug-${agentId}-${queryId}.log`);
   };
 
   return (

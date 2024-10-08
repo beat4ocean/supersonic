@@ -137,7 +137,7 @@ public class S2VisitsDemo extends S2BaseDemo {
     public void addSampleChats(Integer agentId) {
         Long chatId = chatManageService.addChat(user, "样例对话1", agentId);
 
-        chatQueryService.parseAndExecute(chatId.intValue(), agentId, "超音数 访问次数");
+        chatQueryService.parseAndExecute(chatId.intValue(), agentId, "智能BI 访问次数");
         chatQueryService.parseAndExecute(chatId.intValue(), agentId, "按部门统计");
         chatQueryService.parseAndExecute(chatId.intValue(), agentId, "查询近30天");
         chatQueryService.parseAndExecute(chatId.intValue(), agentId, "alice 停留时长");
@@ -151,7 +151,7 @@ public class S2VisitsDemo extends S2BaseDemo {
         agent.setStatus(1);
         agent.setEnableSearch(1);
         agent.setExamples(Lists.newArrayList(
-                "超音数访问次数",
+                "智能BI访问次数",
                 "近15天超音数访问次数汇总",
                 "按部门统计超音数的访问人数",
                 "对比alice和lucy的停留时长",

@@ -17,7 +17,7 @@ public class TranslateTest extends BaseTest {
 
     @Test
     public void testSqlExplain() throws Exception {
-        String sql = "SELECT 部门, SUM(访问次数) AS 访问次数 FROM 超音数PVUV统计  GROUP BY 部门 ";
+        String sql = "SELECT 部门, SUM(访问次数) AS 访问次数 FROM 智能BIPVUV统计  GROUP BY 部门 ";
         SemanticTranslateResp explain = semanticLayerService.translate(QueryReqBuilder.buildS2SQLReq(sql,
                 DataUtils.getMetricAgentView()), User.getFakeUser());
         assertNotNull(explain);

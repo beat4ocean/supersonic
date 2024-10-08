@@ -49,7 +49,7 @@ public class MetricTest extends BaseTest {
 
     //@Test
     public void testMetricDomain() throws Exception {
-        QueryResult actualResult = submitNewChat("超音数总访问次数", DataUtils.metricAgentId);
+        QueryResult actualResult = submitNewChat("智能BI总访问次数", DataUtils.metricAgentId);
 
         QueryResult expectedResult = new QueryResult();
         SemanticParseInfo expectedParseInfo = new SemanticParseInfo();
@@ -66,7 +66,7 @@ public class MetricTest extends BaseTest {
 
     @Test
     public void testMetricGroupBy() throws Exception {
-        QueryResult actualResult = submitNewChat("近7天超音数各部门的访问次数", DataUtils.metricAgentId);
+        QueryResult actualResult = submitNewChat("近7天智能BI各部门的访问次数", DataUtils.metricAgentId);
 
         QueryResult expectedResult = new QueryResult();
         SemanticParseInfo expectedParseInfo = new SemanticParseInfo();
@@ -131,7 +131,7 @@ public class MetricTest extends BaseTest {
 
     @Test
     public void testMetricGroupBySum() throws Exception {
-        QueryResult actualResult = submitNewChat("近7天超音数各部门的访问次数总和", DataUtils.metricAgentId);
+        QueryResult actualResult = submitNewChat("近7天智能BI各部门的访问次数总和", DataUtils.metricAgentId);
         QueryResult expectedResult = new QueryResult();
         SemanticParseInfo expectedParseInfo = new SemanticParseInfo();
         expectedResult.setChatContext(expectedParseInfo);

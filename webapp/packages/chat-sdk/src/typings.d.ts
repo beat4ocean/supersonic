@@ -32,7 +32,7 @@ declare module '*.module.less' {
 interface AxiosResponse<T = any> extends Promise<T> {
   code: number;
   data: T;
-  msg: string;  
+  msg: string;
 }
 
 type Result<T> = {
@@ -62,7 +62,7 @@ type DavinciResult<T> = {
   };
 };
 
-// 新请求器下的超音数分页接口声明泛型
+// 新请求器下的智能BI分页接口声明泛型
 type TPaginationResponse<T> = {
   content: T[];
   current: number;

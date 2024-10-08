@@ -12,12 +12,12 @@ class SqlSelectFunctionHelperTest {
     @Test
     void testHasAggregateFunction() throws JSQLParserException {
 
-        String sql = "select 部门,sum (访问次数) from 超音数 where 数据日期 = '2023-08-08' "
+        String sql = "select 部门,sum (访问次数) from 智能BI where 数据日期 = '2023-08-08' "
                 + "and 用户 =alice and 发布日期 ='11' group by 部门 limit 1";
         boolean hasAggregateFunction = SqlSelectFunctionHelper.hasAggregateFunction(sql);
 
         Assert.assertEquals(hasAggregateFunction, true);
-        sql = "select 部门,count (访问次数) from 超音数 where 数据日期 = '2023-08-08' "
+        sql = "select 部门,count (访问次数) from 智能BI where 数据日期 = '2023-08-08' "
                 + "and 用户 =alice and 发布日期 ='11' group by 部门 limit 1";
         hasAggregateFunction = SqlSelectFunctionHelper.hasAggregateFunction(sql);
         Assert.assertEquals(hasAggregateFunction, true);
@@ -46,17 +46,17 @@ class SqlSelectFunctionHelperTest {
     @Test
     void testHasFunction() throws JSQLParserException {
 
-        String sql = "select 部门,sum (访问次数) from 超音数 where 数据日期 = '2023-08-08' "
+        String sql = "select 部门,sum (访问次数) from 智能BI where 数据日期 = '2023-08-08' "
                 + "and 用户 =alice and 发布日期 ='11' group by 部门 limit 1";
         boolean hasFunction = SqlSelectFunctionHelper.hasFunction(sql, "sum");
 
         Assert.assertEquals(hasFunction, true);
-        sql = "select 部门,count (访问次数) from 超音数 where 数据日期 = '2023-08-08' "
+        sql = "select 部门,count (访问次数) from 智能BI where 数据日期 = '2023-08-08' "
                 + "and 用户 =alice and 发布日期 ='11' group by 部门 limit 1";
         hasFunction = SqlSelectFunctionHelper.hasFunction(sql, "count");
         Assert.assertEquals(hasFunction, true);
 
-        sql = "select 部门,count (*) from 超音数 where 数据日期 = '2023-08-08' "
+        sql = "select 部门,count (*) from 智能BI where 数据日期 = '2023-08-08' "
                 + "and 用户 =alice and 发布日期 ='11' group by 部门 limit 1";
         hasFunction = SqlSelectFunctionHelper.hasFunction(sql, "count");
         Assert.assertEquals(hasFunction, true);
@@ -66,7 +66,7 @@ class SqlSelectFunctionHelperTest {
         hasFunction = SqlSelectFunctionHelper.hasFunction(sql, "sum");
         Assert.assertEquals(hasFunction, false);
 
-        sql = "select 部门,min (访问次数) from 超音数 where 数据日期 = '2023-08-08' "
+        sql = "select 部门,min (访问次数) from 智能BI where 数据日期 = '2023-08-08' "
                 + "and 用户 =alice and 发布日期 ='11' group by 部门 limit 1";
         hasFunction = SqlSelectFunctionHelper.hasFunction(sql, "min");
 
@@ -75,11 +75,11 @@ class SqlSelectFunctionHelperTest {
 
     @Test
     void testHasAsterisk() {
-        String sql = "select 部门,sum (访问次数) from 超音数 where 数据日期 = '2023-08-08' "
+        String sql = "select 部门,sum (访问次数) from 智能BI where 数据日期 = '2023-08-08' "
                 + "and 用户 =alice and 发布日期 ='11' group by 部门 limit 1";
 
         Assert.assertEquals(SqlSelectFunctionHelper.hasAsterisk(sql), false);
-        sql = "select * from 超音数 where 数据日期 = '2023-08-08' "
+        sql = "select * from 智能BI where 数据日期 = '2023-08-08' "
                 + "and 用户 =alice and 发布日期 ='11'";
         Assert.assertEquals(SqlSelectFunctionHelper.hasAsterisk(sql), true);
     }

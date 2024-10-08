@@ -43,7 +43,7 @@ public class FlightSqlTest extends BaseTest {
         headers.insert("password", "admin");
         HeaderCallOption headerOption = new HeaderCallOption(headers);
         try (final FlightSqlClient.PreparedStatement preparedStatement = sqlClient.prepare(
-                "SELECT 部门, SUM(访问次数) AS 访问次数 FROM 超音数PVUV统计  GROUP BY 部门",
+                "SELECT 部门, SUM(访问次数) AS 访问次数 FROM 智能BIPVUV统计  GROUP BY 部门",
                 headerOption)) {
             final FlightInfo info = preparedStatement.execute();
             FlightStream stream = sqlClient.getStream(info
@@ -80,7 +80,7 @@ public class FlightSqlTest extends BaseTest {
         HeaderCallOption headerOption = new HeaderCallOption(headers);
         try {
             FlightInfo flightInfo = sqlClient.execute(
-                    "SELECT 部门, SUM(访问次数) AS 访问次数 FROM 超音数PVUV统计  GROUP BY 部门",
+                    "SELECT 部门, SUM(访问次数) AS 访问次数 FROM 智能BIPVUV统计  GROUP BY 部门",
                     headerOption);
             FlightStream stream = sqlClient.getStream(flightInfo
                     .getEndpoints()

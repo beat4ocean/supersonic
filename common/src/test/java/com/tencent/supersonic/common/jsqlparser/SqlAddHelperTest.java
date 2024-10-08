@@ -21,7 +21,7 @@ class SqlAddHelperTest {
     @Test
     void testAddWhere() throws JSQLParserException {
 
-        String sql = "select 部门,sum (访问次数) from 超音数 where 数据日期 = '2023-08-08' "
+        String sql = "select 部门,sum (访问次数) from 智能BI where 数据日期 = '2023-08-08' "
                 + "and 用户 =alice and 发布日期 ='11' group by 部门 limit 1";
         sql = SqlAddHelper.addWhere(sql, "column_a", 123444555);
         List<String> selectFields = SqlSelectHelper.getAllSelectFields(sql);
@@ -36,49 +36,49 @@ class SqlAddHelperTest {
         Expression expression = CCJSqlParserUtil.parseCondExpression(" ( column_c = 111  or column_d = 1111)");
 
         sql = SqlAddHelper.addWhere(
-                "select 部门,sum (访问次数) from 超音数 where 数据日期 = '2023-08-08' "
+                "select 部门,sum (访问次数) from 智能BI where 数据日期 = '2023-08-08' "
                         + "and 用户 =alice and 发布日期 ='11' group by 部门 limit 1",
                 expression);
 
         Assert.assertEquals(sql.contains("column_c = 111"), true);
 
-        sql = "select 部门,sum (访问次数) from 超音数 where 用户 = alice or 发布日期 ='2023-07-03' group by 部门 limit 1";
+        sql = "select 部门,sum (访问次数) from 智能BI where 用户 = alice or 发布日期 ='2023-07-03' group by 部门 limit 1";
         sql = SqlAddHelper.addParenthesisToWhere(sql);
         sql = SqlAddHelper.addWhere(sql, "数据日期", "2023-08-08");
-        Assert.assertEquals(sql, "SELECT 部门, sum(访问次数) FROM 超音数 WHERE "
+        Assert.assertEquals(sql, "SELECT 部门, sum(访问次数) FROM 智能BI WHERE "
                 + "(用户 = alice OR 发布日期 = '2023-07-03') AND 数据日期 = '2023-08-08' GROUP BY 部门 LIMIT 1");
 
     }
 
     @Test
     void testAddFunctionToSelect() {
-        String sql = "SELECT user_name FROM 超音数 WHERE sys_imp_date <= '2023-09-03' AND "
+        String sql = "SELECT user_name FROM 智能BI WHERE sys_imp_date <= '2023-09-03' AND "
                 + "sys_imp_date >= '2023-08-04' GROUP BY user_name HAVING sum(pv) > 1000";
         List<Expression> havingExpressionList = SqlSelectHelper.getHavingExpression(sql);
 
         String replaceSql = SqlAddHelper.addFunctionToSelect(sql, havingExpressionList);
         System.out.println(replaceSql);
-        Assert.assertEquals("SELECT user_name, sum(pv) FROM 超音数 WHERE sys_imp_date <= '2023-09-03' "
+        Assert.assertEquals("SELECT user_name, sum(pv) FROM 智能BI WHERE sys_imp_date <= '2023-09-03' "
                         + "AND sys_imp_date >= '2023-08-04' GROUP BY user_name HAVING sum(pv) > 1000",
                 replaceSql);
 
-        sql = "SELECT user_name,sum(pv) FROM 超音数 WHERE sys_imp_date <= '2023-09-03' AND "
+        sql = "SELECT user_name,sum(pv) FROM 智能BI WHERE sys_imp_date <= '2023-09-03' AND "
                 + "sys_imp_date >= '2023-08-04' GROUP BY user_name HAVING sum(pv) > 1000";
         havingExpressionList = SqlSelectHelper.getHavingExpression(sql);
 
         replaceSql = SqlAddHelper.addFunctionToSelect(sql, havingExpressionList);
         System.out.println(replaceSql);
-        Assert.assertEquals("SELECT user_name, sum(pv) FROM 超音数 WHERE sys_imp_date <= '2023-09-03' "
+        Assert.assertEquals("SELECT user_name, sum(pv) FROM 智能BI WHERE sys_imp_date <= '2023-09-03' "
                         + "AND sys_imp_date >= '2023-08-04' GROUP BY user_name HAVING sum(pv) > 1000",
                 replaceSql);
 
-        sql = "SELECT user_name,sum(pv) FROM 超音数 WHERE (sys_imp_date <= '2023-09-03') AND "
+        sql = "SELECT user_name,sum(pv) FROM 智能BI WHERE (sys_imp_date <= '2023-09-03') AND "
                 + "sys_imp_date = '2023-08-04' GROUP BY user_name HAVING sum(pv) > 1000";
         havingExpressionList = SqlSelectHelper.getHavingExpression(sql);
 
         replaceSql = SqlAddHelper.addFunctionToSelect(sql, havingExpressionList);
         System.out.println(replaceSql);
-        Assert.assertEquals("SELECT user_name, sum(pv) FROM 超音数 WHERE (sys_imp_date <= '2023-09-03') "
+        Assert.assertEquals("SELECT user_name, sum(pv) FROM 智能BI WHERE (sys_imp_date <= '2023-09-03') "
                         + "AND sys_imp_date = '2023-08-04' GROUP BY user_name HAVING sum(pv) > 1000",
                 replaceSql);
 
