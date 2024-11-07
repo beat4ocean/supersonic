@@ -7,7 +7,7 @@ import java.util.UUID;
 public class TraceIdUtil {
     public static final String TRACE_ID = "traceId";
 
-    public static final String PREFIX = "supersonic";
+    public static final String PREFIX = "smartbi";
 
     public static String getTraceId() {
         String traceId = (String) MDC.get(TRACE_ID);
