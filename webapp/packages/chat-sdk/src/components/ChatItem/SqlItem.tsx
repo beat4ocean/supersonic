@@ -161,7 +161,7 @@ ${executeErrorMsg}
     if (!!executeErrorMsg) {
       text += getErrorMsgText();
     }
-    exportTextFile(text, `supersonic-debug-${agentId}-${queryId}.log`);
+    exportTextFile(text, `smartbi-debug-${agentId}-${queryId}.log`);
   };
 
   return (

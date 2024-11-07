@@ -513,7 +513,7 @@ export function searchKnowledgeConfigQuery(data: any): Promise<any> {
 }
 
 const downloadStruct = (blob: Blob) => {
-  const fieldName = `supersonic_${moment().format('YYYYMMDDhhmmss')}.xlsx`;
+  const fieldName = `smartbi_${moment().format('YYYYMMDDhhmmss')}.xlsx`;
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([blob]));
   link.download = fieldName;
