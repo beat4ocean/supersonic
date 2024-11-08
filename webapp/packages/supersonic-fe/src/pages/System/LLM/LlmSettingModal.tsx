@@ -1,28 +1,23 @@
 import React, { useState, useRef } from 'react';
 import { Button, Modal, Space } from 'antd';
-import DatabaseCreateForm from './DatabaseCreateForm';
-import { ISemantic } from '../../data';
+import LlmCreateForm from './LlmCreateForm';
+import { ISemantic } from '@/pages/SemanticModel/data';
 
 export type CreateFormProps = {
   onCancel: () => void;
-  databaseItem?: ISemantic.IDatabaseItem;
+  llmItem?: ISemantic.IDatabaseItem;
   open: boolean;
   onSubmit: (values?: any) => void;
 };
 
-const DatabaseSettingModal: React.FC<CreateFormProps> = ({
-  onCancel,
-  databaseItem,
-  open,
-  onSubmit,
-}) => {
+const DatabaseSettingModal: React.FC<CreateFormProps> = ({ onCancel, llmItem, open, onSubmit }) => {
   const [testLoading, setTestLoading] = useState<boolean>(false);
 
   const createFormRef = useRef<any>({});
 
   const handleTestConnection = async () => {
     setTestLoading(true);
-    await createFormRef.current.testDatabaseConnection();
+    await createFormRef.current.testLlmConnection();
     setTestLoading(false);
   };
 
@@ -43,7 +38,7 @@ const DatabaseSettingModal: React.FC<CreateFormProps> = ({
           <Button
             type="primary"
             onClick={() => {
-              createFormRef.current.saveDatabaseConfig();
+              createFormRef.current.saveLlmConfig();
             }}
           >
             保 存
@@ -55,19 +50,18 @@ const DatabaseSettingModal: React.FC<CreateFormProps> = ({
 
   return (
     <Modal
-      width={600}
+      width={800}
       destroyOnClose
-      title="数据库连接设置"
+      title="大模型设置"
       style={{ top: 48 }}
       maskClosable={false}
       open={open}
       footer={renderFooter()}
       onCancel={onCancel}
     >
-      <DatabaseCreateForm
-        hideSubmitBtn={true}
+      <LlmCreateForm
         ref={createFormRef}
-        databaseId={databaseItem?.id}
+        llmItem={llmItem}
         onSubmit={() => {
           onSubmit?.();
         }}

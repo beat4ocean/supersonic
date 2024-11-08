@@ -3,11 +3,10 @@ import { ProTable } from '@ant-design/pro-components';
 import { message, Button, Space, Popconfirm } from 'antd';
 import React, { useRef, useState, useEffect } from 'react';
 import DatabaseSettingModal from './DatabaseSettingModal';
-import { ISemantic } from '../../data';
-import { getDatabaseList, deleteDatabase } from '../../service';
+import { ISemantic } from '@/pages/SemanticModel/data';
+import { getDatabaseList, deleteDatabase } from '@/pages/SemanticModel/service';
 
 import moment from 'moment';
-import styles from '../style.less';
 
 type Props = {};
 

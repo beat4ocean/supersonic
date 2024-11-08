@@ -1,23 +1,28 @@
 import React, { useState, useRef } from 'react';
 import { Button, Modal, Space } from 'antd';
-import LlmCreateForm from './LlmCreateForm';
-import { ISemantic } from '../../data';
+import DatabaseCreateForm from './DatabaseCreateForm';
+import { ISemantic } from '@/pages/SemanticModel/data';
 
 export type CreateFormProps = {
   onCancel: () => void;
-  llmItem?: ISemantic.IDatabaseItem;
+  databaseItem?: ISemantic.IDatabaseItem;
   open: boolean;
   onSubmit: (values?: any) => void;
 };
 
-const DatabaseSettingModal: React.FC<CreateFormProps> = ({ onCancel, llmItem, open, onSubmit }) => {
+const DatabaseSettingModal: React.FC<CreateFormProps> = ({
+  onCancel,
+  databaseItem,
+  open,
+  onSubmit,
+}) => {
   const [testLoading, setTestLoading] = useState<boolean>(false);
 
   const createFormRef = useRef<any>({});
 
   const handleTestConnection = async () => {
     setTestLoading(true);
-    await createFormRef.current.testLlmConnection();
+    await createFormRef.current.testDatabaseConnection();
     setTestLoading(false);
   };
 
@@ -38,7 +43,7 @@ const DatabaseSettingModal: React.FC<CreateFormProps> = ({ onCancel, llmItem, op
           <Button
             type="primary"
             onClick={() => {
-              createFormRef.current.saveLlmConfig();
+              createFormRef.current.saveDatabaseConfig();
             }}
           >
             保 存
@@ -50,18 +55,19 @@ const DatabaseSettingModal: React.FC<CreateFormProps> = ({ onCancel, llmItem, op
 
   return (
     <Modal
-      width={800}
+      width={600}
       destroyOnClose
-      title="大模型设置"
+      title="数据库连接设置"
       style={{ top: 48 }}
       maskClosable={false}
       open={open}
       footer={renderFooter()}
       onCancel={onCancel}
     >
-      <LlmCreateForm
+      <DatabaseCreateForm
+        hideSubmitBtn={true}
         ref={createFormRef}
-        llmItem={llmItem}
+        databaseId={databaseItem?.id}
         onSubmit={() => {
           onSubmit?.();
         }}

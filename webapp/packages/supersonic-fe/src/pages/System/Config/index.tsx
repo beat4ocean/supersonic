@@ -5,9 +5,8 @@ import { getSystemConfig, saveSystemConfig } from '@/services/user';
 import { ProCard } from '@ant-design/pro-components';
 import SelectTMEPerson from '@/components/SelectTMEPerson';
 import { ConfigParametersItem, SystemConfig, dependenciesItem } from './types';
-// import { testLLMConn } from '../../services/system';
 import { groupBy } from 'lodash';
-import { genneratorFormItemList } from '../SemanticModel/utils';
+import {genneratorFormItemList} from "@/pages/SemanticModel/utils";
 
 const FormItem = Form.Item;
 

@@ -4,7 +4,7 @@ import type { DataNode } from 'antd/lib/tree';
 import { Form, Input, InputNumber, Switch, Select, Slider } from 'antd';
 import FormItemTitle from '@/components/FormHelper/FormItemTitle';
 import DisabledWheelNumberInput from '@/components/DisabledWheelNumberInput';
-import { ConfigParametersItem } from '../System/types';
+import { ConfigParametersItem } from '@/pages/System/Config/types';
 import { TransType } from './enum';
 import { isString, isBoolean } from 'lodash';
 import { ReactNode } from 'react';

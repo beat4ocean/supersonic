@@ -6,15 +6,15 @@ import {
   testDatabaseConnect,
   getDatabaseParameters,
   getDatabaseDetail,
-} from '../../service';
+} from '@/pages/SemanticModel/service';
 import { formLayout } from '@/components/FormHelper/utils';
 import SelectTMEPerson from '@/components/SelectTMEPerson';
-import { ConfigParametersItem } from '../../../System/types';
-import { genneratorFormItemList } from '../../utils';
-import { ISemantic } from '../../data';
+import { ConfigParametersItem } from '@/pages/System/Config/types';
+import { genneratorFormItemList } from '@/pages/SemanticModel/utils';
+import { ISemantic } from '@/pages/SemanticModel/data';
 import { encryptPassword, decryptPassword } from '@/utils/utils';
 import CryptoJS from 'crypto-js';
-import styles from '../style.less';
+import styles from '@/pages/SemanticModel/components/style.less';
 type Props = {
   domainId?: number;
   databaseId?: number;

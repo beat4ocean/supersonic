@@ -1,13 +1,13 @@
 import { useEffect, forwardRef, useImperativeHandle, useState, useRef } from 'react';
 import type { ForwardRefRenderFunction } from 'react';
 import { message, Form, Input, Select, Button, Space, Slider, InputNumber } from 'antd';
-import { saveLlmConfig } from '../../service';
-import { ConfigParametersItem, SystemConfig, dependenciesItem } from '@/pages/System/types';
+import { saveLlmConfig } from '@/pages/SemanticModel/service';
+import { ConfigParametersItem, SystemConfig, dependenciesItem } from '@/pages/System/Config/types';
 import { testLLMConn, getLlmConfig } from '@/services/system';
 import { formLayout } from '@/components/FormHelper/utils';
 
-import { genneratorFormItemList } from '../../utils';
-import styles from '../style.less';
+import { genneratorFormItemList } from '@/pages/SemanticModel/utils';
+import styles from '@/pages/SemanticModel/components/style.less';
 type Props = {
   llmItem?: any;
   onSubmit?: (params?: any) => void;

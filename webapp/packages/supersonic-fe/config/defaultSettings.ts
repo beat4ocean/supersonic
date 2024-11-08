@@ -6,7 +6,9 @@ const Settings: ProLayoutProps & {
 } = {
   navTheme: 'light',
   colorPrimary: '#296DF3',
-  layout: 'top',
+  // layout: 'top',
+  // layout: 'side',
+  layout: 'mix',
   contentWidth: 'Fluid',
   fixedHeader: false,
   fixSiderbar: true,
@@ -14,7 +16,9 @@ const Settings: ProLayoutProps & {
   title: '',
   pwa: false,
   iconfontUrl: '//at.alicdn.com/t/c/font_4120566_x5c4www9bqm.js',
-  // splitMenus: true,
+  splitMenus: true,
+  siderWidth: 150,
+
   // menu: {
   //   autoClose: false,
   //   ignoreFlatMenu: true,

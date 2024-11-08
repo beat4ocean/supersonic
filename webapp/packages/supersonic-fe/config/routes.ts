@@ -150,22 +150,29 @@ const ROUTES = [
     component: './Login',
   },
   {
-    path: '/database',
-    name: 'database',
-    component: './SemanticModel/components/Database/DatabaseTable',
-    envEnableList: [ENV_KEY.SEMANTIC],
-  },
-  {
-    path: '/llm',
-    name: 'llm',
-    component: './SemanticModel/components/LLM/LlmTable',
-    envEnableList: [ENV_KEY.SEMANTIC],
-  },
-  {
     path: '/system',
     name: 'system',
-    component: './System',
-    access: ROUTE_AUTH_CODES.SYSTEM_ADMIN,
+    routes: [
+      {
+        path: '/system/llm',
+        name: 'llm',
+        component: './System/LLM/LlmTable',
+        envEnableList: [ENV_KEY.SEMANTIC],
+      },
+      {
+        path: '/system/database',
+        name: 'database',
+        component: './System/Database/DatabaseTable',
+        envEnableList: [ENV_KEY.SEMANTIC],
+      },
+      {
+        path: '/system/config',
+        name: 'config',
+        component: './System/Config',
+        envEnableList: [ENV_KEY.SEMANTIC],
+        access: ROUTE_AUTH_CODES.SYSTEM_ADMIN,
+      },
+    ],
   },
   {
     path: '/',
