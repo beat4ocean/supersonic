@@ -47,29 +47,28 @@ const DomainManagerTab: React.FC<Props> = ({
   const [showModelType, setShowModelType] = useState<string>('list');
   const tabItem = [
     {
+      label: '模型管理',
+      key: 'modelManage',
+      children:
+          showModelType === 'list' ? (
+              <OverView
+                  modelList={modelList}
+                  onModelChange={(model) => {
+                    handleModelChange(model);
+                  }}
+              />
+          ) : (
+              <div style={{ width: '100%' }} key={selectDomainId}>
+                <SemanticGraphCanvas />
+              </div>
+          ),
+    },
+    {
       label: '数据集管理',
       key: 'overview',
       hidden: !!domainData?.parentId,
       children: <View dataSetList={dataSetList} />,
     },
-    {
-      label: '模型管理',
-      key: 'modelManage',
-      children:
-        showModelType === 'list' ? (
-          <OverView
-            modelList={modelList}
-            onModelChange={(model) => {
-              handleModelChange(model);
-            }}
-          />
-        ) : (
-          <div style={{ width: '100%' }} key={selectDomainId}>
-            <SemanticGraphCanvas />
-          </div>
-        ),
-    },
-
     {
       label: '标签对象管理',
       key: 'tagObjectManage',
