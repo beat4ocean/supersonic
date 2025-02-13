@@ -63,7 +63,7 @@ function runJavaService {
   command="-Dfile.encoding=UTF-8 -Duser.language=Zh -Duser.region=CN -Duser.timezone=GMT+08 -Dapp_name=${local_app_name} -Xms1024m -Xmx1024m $main_class"
 
   mkdir -p $javaRunDir/logs
-  java -Dspring.profiles.active="$profile" $command >/dev/null 2>$javaRunDir/logs/error.log &
+  java -Dspring.profiles.active="$profile" $command 2>>$javaRunDir/logs/error.log &
 }
 
 function start() {
