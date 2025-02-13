@@ -64,7 +64,7 @@ function runJavaService {
   -Dapp_name=${local_app_name} -Xms1024m -Xmx2048m $main_class"
 
   mkdir -p $javaRunDir/logs
-  java -Dspring.profiles.active="$profile" $command >/dev/null 2>$javaRunDir/logs/error.log &
+  java -Dspring.profiles.active="$profile" $command 2>>$javaRunDir/logs/error.log &
 }
 
 function start() {
