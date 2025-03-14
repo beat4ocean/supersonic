@@ -27,7 +27,6 @@ const DomainManagerTab: React.FC<Props> = ({ activeKey, onMenuChange }) => {
     initState.current = false;
   }, [selectModelId]);
 
-  const [showModelType, setShowModelType] = useState<string>('list');
   const tabItem = [
     {
       label: '数据集管理',
@@ -38,21 +37,15 @@ const DomainManagerTab: React.FC<Props> = ({ activeKey, onMenuChange }) => {
     {
       label: '模型管理',
       key: 'modelManage',
-      children:
-        showModelType === 'list' ? (
-          <OverView
-            modelList={modelList}
-            // onModelChange={(model) => {
-            //   handleModelChange(model);
-            // }}
-          />
-        ) : (
-          <div style={{ width: '100%' }} key={selectDomainId}>
+      children: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <OverView modelList={modelList} />
+          <div style={{ width: '100%', height: 600 }}>
             <SemanticGraphCanvas />
           </div>
-        ),
+        </div>
+      ),
     },
-
     {
       label: '标签对象管理',
       key: 'tagObjectManage',
@@ -97,25 +90,6 @@ const DomainManagerTab: React.FC<Props> = ({ activeKey, onMenuChange }) => {
         className={styles.tab}
         items={tabItem}
         activeKey={getActiveKey()}
-        tabBarExtraContent={{
-          right:
-            getActiveKey() === 'modelManage' ? (
-              <Radio.Group
-                buttonStyle="solid"
-                value={showModelType}
-                size="small"
-                style={{ marginRight: 25 }}
-                onChange={(e) => {
-                  const showType = e.target.value;
-                  setShowModelType(showType);
-                }}
-              >
-                {showModelType}
-                <Radio.Button value="list">列表</Radio.Button>
-                <Radio.Button value="canvas">画布</Radio.Button>
-              </Radio.Group>
-            ) : undefined,
-        }}
         size="large"
         onChange={(menuKey: string) => {
           onMenuChange?.(menuKey);
