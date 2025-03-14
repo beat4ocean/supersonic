@@ -6,6 +6,7 @@ import less from 'rollup-plugin-less'
 import styles from "rollup-plugin-styles";
 import postcss from 'rollup-plugin-postcss'
 import cssnano from 'cssnano'
+import url from '@rollup/plugin-url'
 
 const overrides = {
   compilerOptions: { declaration: true },
@@ -18,6 +19,10 @@ const config = {
     nodeResolve(),
     commonjs(),
     json(),
+    url({
+      include: ['**/*.svg', '**/*.png', '**/*.jpg', '**/*.gif'],
+      limit: 10000
+    }),
     typescript({ tsconfigOverride: overrides }),
     styles({
       // mode: ["extract"],

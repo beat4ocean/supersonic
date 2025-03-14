@@ -26,6 +26,7 @@ import { AgentType } from '../../Chat/type';
 import dayjs, { Dayjs } from 'dayjs';
 import { exportCsvFile } from '../../utils/utils';
 import { useMethodRegister } from '../../hooks';
+import AiIcon from '../../../assets/ai.svg';
 
 type Props = {
   msg: string;
@@ -444,7 +445,8 @@ const ChatItem: React.FC<Props> = ({
   return (
     <ChartItemContext.Provider value={{ register, call }}>
       <div className={prefixCls}>
-        {!isMobile && <IconFont type="icon-zhinengsuanfa" className={`${prefixCls}-avatar`} />}
+        {/*{!isMobile && <IconFont type="icon-zhinengsuanfa" className={`${prefixCls}-avatar`} />}*/}
+        {!isMobile && <img src={AiIcon} alt="ai-icon" className={`${prefixCls}-avatar`} />}
         <div className={isMobile ? `${prefixCls}-mobile-msg-card` : ''}>
           <div className={`${prefixCls}-time`}>
             {parseTimeCost?.parseStartTime
