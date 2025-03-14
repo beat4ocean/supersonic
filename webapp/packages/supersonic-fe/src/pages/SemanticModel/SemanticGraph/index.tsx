@@ -29,7 +29,7 @@ import DimensionInfoModal from '../components/DimensionInfoModal';
 import MetricInfoCreateForm from '../components/MetricInfoCreateForm';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
 import ClassModelTypeModal from '../components/ClassModelTypeModal';
-import GraphToolBar from './components/GraphToolBar';
+// import GraphToolBar from './components/GraphToolBar';
 import GraphLegend from './components/GraphLegend';
 import GraphLegendVisibleModeItem from './components/GraphLegendVisibleModeItem';
 import ModelRelationFormDrawer from './components/ModelRelationFormDrawer';
@@ -1013,7 +1013,7 @@ const SemanticGraph: React.FC<Props> = ({}) => {
         // onZoomOut={() => {}}
       />
 
-      <GraphToolBar
+      {/*<GraphToolBar
         onClick={({ eventName }: { eventName: string }) => {
           setNodeDataSource(undefined);
           if (eventName === 'createDatabase') {
@@ -1028,7 +1028,7 @@ const SemanticGraph: React.FC<Props> = ({}) => {
             setMetricItem(undefined);
           }
         }}
-      />
+      />*/}
       <div
         ref={ref}
         key={`${modelId}`}
