@@ -1,5 +1,5 @@
-import { Tabs, Radio } from 'antd';
-import React, { useRef, useEffect, useState } from 'react';
+import { Tabs } from 'antd';
+import React, { useRef, useEffect } from 'react';
 import { useModel } from '@umijs/max';
 import PermissionSection from './Permission/PermissionSection';
 import TagObjectTable from '../Insights/components/TagObjectTable';
@@ -41,7 +41,8 @@ const DomainManagerTab: React.FC<Props> = ({ activeKey, onMenuChange }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <OverView modelList={modelList} />
           <div style={{ width: '100%', height: 600 }}>
-            <SemanticGraphCanvas />
+            {/* 添加 key 强制重新渲染 */}
+            {selectDomainId && <SemanticGraphCanvas key={selectDomainId} />}
           </div>
         </div>
       ),
