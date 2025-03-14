@@ -1,4 +1,4 @@
-import LeftAvatar from '../CopilotAvatar';
+// import LeftAvatar from '../CopilotAvatar';
 import Message from '../Message';
 import styles from './style.module.less';
 import { AgentType } from '../../type';
@@ -15,7 +15,7 @@ const AgentTip: React.FC<Props> = ({ currentAgent, onSendMsg }) => {
   }
   return (
     <div className={styles.agentTip}>
-      {!isMobile && <LeftAvatar />}
+      {!isMobile}
       <Message position="left" bubbleClassName={styles.agentTipMsg}>
         <div className={styles.title}>
           您好，智能助理【{currentAgent.name}
