@@ -41,8 +41,7 @@ const DomainManagerTab: React.FC<Props> = ({ activeKey, onMenuChange }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <OverView modelList={modelList} />
           <div style={{ width: '100%', height: 600 }}>
-            {/* 添加 key 强制重新渲染 */}
-            <SemanticGraphCanvas key={selectDomainId} />
+            <SemanticGraphCanvas />
           </div>
         </div>
       ),
