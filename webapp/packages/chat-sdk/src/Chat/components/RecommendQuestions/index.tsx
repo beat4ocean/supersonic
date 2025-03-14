@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import LeftAvatar from '../CopilotAvatar';
+// import LeftAvatar from '../CopilotAvatar';
 import Message from '../Message';
 import styles from './style.module.less';
 import { queryRecommendQuestions } from '../../service';
@@ -34,7 +34,7 @@ const RecommendQuestions: React.FC<Props> = ({ onSelectQuestion }) => {
 
   return (
     <div className={styles.recommendQuestions}>
-      {!isMobile && <LeftAvatar />}
+      {!isMobile}
       {loading ? (
         <></>
       ) : questions.length > 0 ? (

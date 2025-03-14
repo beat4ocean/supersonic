@@ -1,7 +1,7 @@
 import { isMobile } from '../../utils/utils';
 import { Avatar } from 'antd';
 import classNames from 'classnames';
-import LeftAvatar from './CopilotAvatar';
+// import LeftAvatar from './CopilotAvatar';
 import Message from './Message';
 import styles from './style.module.less';
 import { userAvatarUrl } from '../../common/env';
@@ -21,7 +21,7 @@ const Text: React.FC<Props> = ({ position, data, quote, anonymousUser }) => {
   const rightAvatarUrl = userAvatarUrl;
   return (
     <div className={textWrapperClass}>
-      {!isMobile && position === 'left' && <LeftAvatar />}
+      {!isMobile && position === 'left'}
       <Message position={position} bubbleClassName={styles.textBubble}>
         {position === 'right' && quote && <div className={styles.quote}>{quote}</div>}
         <div className={styles.text}>{data}</div>

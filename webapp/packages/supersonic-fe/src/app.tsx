@@ -9,7 +9,7 @@ import settings from '../config/themeSettings';
 import { queryCurrentUser } from './services/user';
 import { deleteUrlQuery, isMobile, getToken } from '@/utils/utils';
 import { publicPath } from '../config/defaultSettings';
-import { Copilot } from 'supersonic-chat-sdk';
+// import { Copilot } from 'supersonic-chat-sdk';
 import { configProviderTheme } from '../config/themeSettings';
 export { request } from './services/request';
 import { BASE_TITLE } from '@/common/constants';
@@ -149,9 +149,7 @@ export const layout: RunTimeLayoutConfig = (params) => {
           >
             {/* <AppPage dom={dom} /> */}
             {dom}
-            {history.location.pathname !== '/chat' && !isMobile && (
-              <Copilot token={getToken() || ''} isDeveloper />
-            )}
+            {history.location.pathname !== '/chat' && !isMobile }
           </div>
         </ConfigProvider>
       );
