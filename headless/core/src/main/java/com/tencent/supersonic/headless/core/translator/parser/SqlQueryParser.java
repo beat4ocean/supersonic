@@ -60,8 +60,8 @@ public class SqlQueryParser implements QueryParser {
                     String.format("Querying columns[%s] not matched with semantic fields[%s].",
                             queryFields, semanticFields);
             queryStatement.setErrMsg(errMsg);
-            queryStatement.setStatus(QueryState.INVALID);
-            return;
+            //queryStatement.setStatus(QueryState.INVALID);
+            //return;
         }
         queryStatement.setOntologyQuery(ontologyQuery);
 
