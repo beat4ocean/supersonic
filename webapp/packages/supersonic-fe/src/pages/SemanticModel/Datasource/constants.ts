@@ -119,10 +119,10 @@ export const AGG_OPTIONS = [
 export const DATE_OPTIONS = ['day', 'week', 'month'];
 
 export const DATE_FORMATTER = [
-  'yyyy-MM-dd',
   'yyyy-MM-dd HH:mm:ss',
   'yyyy-MM-dd HH:mm',
   'yyyy-MM-dd HH',
+  'yyyy-MM-dd',
   'yyyyMMdd',
   'yyyy-MM',
   'yyyyMM',
