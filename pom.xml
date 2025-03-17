@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.4</version>
+        <version>3.3.7</version>
     </parent>
 
     <properties>
@@ -32,12 +32,12 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <file.encoding>UTF-8</file.encoding>
-        <jsqlparser.version>4.7</jsqlparser.version>
+        <jsqlparser.version>4.9</jsqlparser.version>
         <pagehelper.version>6.1.0</pagehelper.version>
         <pagehelper.spring.version>2.1.0</pagehelper.spring.version>
         <mybatis.version>3.5.3</mybatis.version>
         <guava.version>32.0.0-jre</guava.version>
-        <hanlp.version>portable-1.8.3</hanlp.version>
+        <hanlp.version>portable-1.8.4</hanlp.version>
         <hadoop.version>2.7.2</hadoop.version>
         <commons.lang.version>2.6</commons.lang.version>
         <commons.lang3.version>3.7</commons.lang3.version>

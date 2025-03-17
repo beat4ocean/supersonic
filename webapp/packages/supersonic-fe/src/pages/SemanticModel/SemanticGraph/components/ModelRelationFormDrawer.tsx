@@ -153,6 +153,13 @@ const ModelRelationFormDrawer: React.FC<ModelRelationFormDrawerProps> = ({
             ]}
           />
         </FormItem>
+        <FormItem label="模型关联结果">
+          <span>
+            {nodeModel?.sourceData?.name} {form.getFieldValue('joinType')}{' '}
+            {nodeModel?.targetData?.name} on {form.getFieldValue('leftField')}{' '}
+            {form.getFieldValue('operator')} {form.getFieldValue('rightField')}
+          </span>
+        </FormItem>
       </>
     );
   };
