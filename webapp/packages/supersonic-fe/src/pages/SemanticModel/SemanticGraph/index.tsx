@@ -764,7 +764,7 @@ const SemanticGraph: React.FC<Props> = ({}) => {
           graphRef.current.updateItem(e.edge, {
             sourceAnchor: sourceAnchorIdx,
             targetAnchor: targetAnchorIdx,
-            label: '模型关系编辑',
+            label: '模型关系',
             style: {
               stroke: '#296df3',
               endArrow: true,
@@ -822,7 +822,7 @@ const SemanticGraph: React.FC<Props> = ({}) => {
           }
           if (sourceAnchor && targetAnchor) {
             graphRef.current.updateItem(e.item, {
-              label: '模型关系编辑',
+              label: '模型关系',
               style: {
                 stroke: '#296df3',
                 endArrow: true,
