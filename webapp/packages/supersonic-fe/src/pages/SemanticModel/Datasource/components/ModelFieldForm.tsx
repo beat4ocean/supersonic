@@ -84,12 +84,12 @@ const ModelFieldForm: React.FC<Props> = ({
     {
       title: '字段类型',
       dataIndex: 'dataType',
-      width: 150,
+      width: 100,
     },
     {
       title: '语义类型',
       dataIndex: 'type',
-      width: 250,
+      width: 200,
       render: (_: any, record: FieldItem) => {
         const { type, classType } = record;
         const selectTypeValue = [EnumModelDataType.DIMENSION].includes(classType)
@@ -206,6 +206,7 @@ const ModelFieldForm: React.FC<Props> = ({
     {
       title: '扩展配置',
       dataIndex: 'extender',
+      width: 350,
       render: (_: any, record: FieldItem) => {
         const { type } = record;
         if (type === EnumDataSourceType.MEASURES) {
@@ -335,7 +336,7 @@ const ModelFieldForm: React.FC<Props> = ({
         />
       ),
       dataIndex: 'fastCreate',
-      width: 200,
+      width: 350,
       render: (_: any, record: FieldItem) => {
         const { type, name } = record;
         const inputValue = name;
@@ -375,7 +376,7 @@ const ModelFieldForm: React.FC<Props> = ({
               />
               <Input
                 className={!inputValue && styles.dataSourceFieldsName}
-                style={{ minHeight: 20 }}
+                style={{ minHeight: 20,width: 300 }}
                 value={inputValue}
                 disabled={!editState}
                 minLength={1}
