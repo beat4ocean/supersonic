@@ -17,6 +17,12 @@ import {
 } from '../constants';
 import styles from '../style.less';
 
+const includeWords = ['_cnt_', '_sum_', '_count_', '_amount_', '_num_'];
+const excludeWords = ['是否', '有无', '有没有', 'is_', 'if_'];
+const excludeRegex = new RegExp(`^(?!.*(${excludeWords.join('|')}))`, 'i');
+const keywordRegex =
+  /(cnt|sum|count|amt|amount|price|interest|total|qty|qtys|quantity|fee|payment|balance|revenue|sales|orders|num|km|总|和|量|数|次|额|费|值|里程|公里)$/i;
+
 type FieldItem = {
   expr?: string;
   bizName: string;
@@ -91,6 +97,54 @@ const ModelFieldForm: React.FC<Props> = ({
       dataIndex: 'type',
       width: 200,
       render: (_: any, record: FieldItem) => {
+        // 自动推断类型逻辑
+        if (!record.type) {
+          let initialType=EnumDataSourceType.TIME;
+          let classType: EnumModelDataType = EnumModelDataType.DIMENSION;
+          let dateFormat: string | undefined;
+          let agg: string | undefined;
+
+          // 根据字段类型推断
+          if (['DATETIME', 'DATE'].includes(record.dataType.toUpperCase())) {
+            initialType = EnumDataSourceType.TIME;
+            classType = EnumModelDataType.DIMENSION;
+            dateFormat =
+              record.dataType.toUpperCase() === 'DATETIME' ? 'yyyy-MM-dd HH:mm:ss' : 'yyyy-MM-dd';
+          }
+          // 根据字段名称推断
+          else if (
+            (excludeRegex.test(record.bizName.toLowerCase()) &&
+              keywordRegex.test(record.bizName.toLowerCase())) ||
+            (excludeRegex.test(record.bizName.toLowerCase()) &&
+              includeWords.some((word) => record.bizName.toLowerCase().includes(word)))
+          ) {
+            initialType = EnumDataSourceType.MEASURES;
+            classType = EnumModelDataType.MEASURES;
+            agg = 'sum';
+          }
+          // 默认维度
+          else {
+            initialType = DIM_OPTIONS[0].value as EnumDataSourceType;
+            classType = EnumModelDataType.DIMENSION;
+          }
+
+          if (initialType) {
+            // 异步更新字段配置
+            setTimeout(() => {
+              onFieldChange(record.bizName, {
+                ...record,
+                type: initialType,
+                classType,
+                dateFormat,
+                agg,
+                name: record.comment || record.bizName || record.name,
+                [getCreateFieldName(initialType!)]: true,
+                checked: 1,
+              });
+            }, 0);
+          }
+        }
+
         const { type, classType } = record;
         const selectTypeValue = [EnumModelDataType.DIMENSION].includes(classType)
           ? classType
@@ -102,7 +156,7 @@ const ModelFieldForm: React.FC<Props> = ({
               value={selectTypeValue}
               allowClear
               onChange={(value) => {
-                let defaultParams:any = {};
+                let defaultParams: any = {};
                 if (value === EnumDataSourceType.MEASURES) {
                   defaultParams = {
                     agg: AGG_OPTIONS[0].value,
@@ -138,12 +192,12 @@ const ModelFieldForm: React.FC<Props> = ({
                 const editState = !isUndefined(record[isCreateName])
                   ? !!record[isCreateName]
                   : true;
-                const { name, comment } = record;
+                const { name, bizName, comment } = record;
                 const params = {
                   ...record,
                   type: value,
                   classType: value,
-                  name: name || comment,
+                  name: comment || bizName || name,
                   [isCreateName]: editState,
                   ...defaultParams,
                 };
@@ -180,11 +234,11 @@ const ModelFieldForm: React.FC<Props> = ({
                   const editState = !isUndefined(record[isCreateName])
                     ? !!record[isCreateName]
                     : true;
-                  const { name, comment } = record;
+                  const { name, bizName, comment } = record;
                   onFieldChange(record.bizName, {
                     ...record,
                     type: value,
-                    name: name || comment,
+                    name: comment || bizName || name,
                     [isCreateName]: editState,
                     ...defaultParams,
                   });
@@ -330,18 +384,19 @@ const ModelFieldForm: React.FC<Props> = ({
     },
     {
       title: (
-        <TableTitleTooltips
-          title="快速创建"
-          tooltips="若勾选快速创建并填写名称，将会把该维度/指标直接创建到维度/指标列表"
-        />
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <TableTitleTooltips
+            title="快速创建"
+            tooltips="若勾选快速创建并填写名称，将会把该维度/指标直接创建到维度/指标列表"
+          />
+        </div>
       ),
       dataIndex: 'fastCreate',
       width: 350,
       render: (_: any, record: FieldItem) => {
-        const { type, name } = record;
-        const inputValue = name;
+        const { type } = record;
         if (
-          [
+          ![
             EnumDataSourceType.PRIMARY,
             EnumDataSourceType.FOREIGN,
             EnumDataSourceType.CATEGORICAL,
@@ -350,50 +405,42 @@ const ModelFieldForm: React.FC<Props> = ({
             EnumDataSourceType.MEASURES,
           ].includes(type as EnumDataSourceType)
         ) {
-          const isCreateName = getCreateFieldName(type);
-          const editState = !isUndefined(record[isCreateName]) ? !!record[isCreateName] : true;
-          return (
-            <Space>
-              <Checkbox
-                checked={editState}
-                onChange={(e) => {
-                  const value = e.target.checked ? 1 : 0;
-                  if (!value) {
-                    onFieldChange(record.bizName, {
-                      ...record,
-                      name: '',
-                      checked: value,
-                      [isCreateName]: value,
-                    });
-                  } else {
-                    onFieldChange(record.bizName, {
-                      ...record,
-                      checked: value,
-                      [isCreateName]: value,
-                    });
-                  }
-                }}
-              />
-              <Input
-                className={!inputValue && styles.dataSourceFieldsName}
-                style={{ minHeight: 20,width: 300 }}
-                value={inputValue}
-                disabled={!editState}
-                minLength={1}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  onFieldChange(record.bizName, {
-                    ...record,
-                    name: value,
-                    [isCreateName]: 1,
-                  });
-                }}
-                placeholder="请填写名称"
-              />
-            </Space>
-          );
+          return <></>;
         }
-        return <></>;
+
+        const isCreateName = getCreateFieldName(type);
+        const editState = !isUndefined(record[isCreateName]) ? !!record[isCreateName] : true;
+
+        return (
+          <Space>
+            <Checkbox
+              checked={editState}
+              onChange={(e) => {
+                const value = e.target.checked;
+                onFieldChange(record.bizName, {
+                  ...record,
+                  [isCreateName]: value ? 1 : 0,
+                  checked: value ? 1 : 0,
+                });
+              }}
+            />
+            <Input
+              className={!record.name && styles.dataSourceFieldsName}
+              style={{ width: 300 }}
+              value={record.name}
+              disabled={!editState}
+              onChange={(e) => {
+                const value = e.target.value;
+                onFieldChange(record.bizName, {
+                  ...record,
+                  name: value,
+                  [isCreateName]: 1,
+                });
+              }}
+              placeholder="请填写名称"
+            />
+          </Space>
+        );
       },
     },
   ];
