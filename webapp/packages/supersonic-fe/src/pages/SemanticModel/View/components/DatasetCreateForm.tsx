@@ -119,6 +119,11 @@ const DatasetCreateForm: React.FC<ModelCreateFormModalProps> = forwardRef(
                         minWidth: 150,
                         textAlign: 'left',
                       }}
+                      showSearch
+                      optionFilterProp="label"
+                      filterOption={(input, option) =>
+                        option?.label?.toLowerCase().includes(input.toLowerCase())
+                      }
                       value={selectedModelItem?.id}
                       placeholder="请选择模型，获取当前模型下指标维度信息"
                       onChange={(val) => {
@@ -127,9 +132,13 @@ const DatasetCreateForm: React.FC<ModelCreateFormModalProps> = forwardRef(
                         const modelItem = modelList.find((item) => item.id === val);
                         setSelectedModelItem(modelItem);
                       }}
-                      options={modelList.map((item) => {
-                        return { label: item.name, value: item.id };
-                      })}
+                      options={modelList
+                        .slice()
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((item) => ({
+                          label: item.name,
+                          value: item.id,
+                        }))}
                     />
                   </Space>
                 }
