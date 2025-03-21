@@ -16,7 +16,7 @@ public class ModelRela extends RecordInfo {
 
     private Long toModelId;
 
-    // left join, inner join, right join, outer join
+    // left join, inner join, right join, full join
     private String joinType;
 
     private List<JoinCondition> joinConditions = Lists.newArrayList();

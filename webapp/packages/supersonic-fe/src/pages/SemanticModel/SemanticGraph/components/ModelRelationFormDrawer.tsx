@@ -149,7 +149,7 @@ const ModelRelationFormDrawer: React.FC<ModelRelationFormDrawerProps> = ({
               { label: 'left join', value: 'left join' },
               { label: 'inner join', value: 'inner join' },
               { label: 'right join', value: 'right join' },
-              { label: 'outer join', value: 'outer join' },
+              { label: 'full join', value: 'full join' },
             ]}
           />
         </FormItem>

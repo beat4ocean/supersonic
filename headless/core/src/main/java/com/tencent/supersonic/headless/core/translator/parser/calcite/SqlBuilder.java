@@ -61,6 +61,9 @@ public class SqlBuilder {
         TableView tableView;
         if (!CollectionUtils.isEmpty(ontology.getJoinRelations()) && dataModels.size() > 1) {
             Set<ModelResp> models = probeRelatedModels(dataModels, queryStatement.getOntology());
+            for (ModelResp model : models) {
+                log.info("probeRelatedModels: {}", model.getName());
+            }
             tableView = render(ontologyQuery, models, scope, schema);
         } else {
             tableView = render(ontologyQuery, dataModels, scope, schema);
@@ -163,7 +166,10 @@ public class SqlBuilder {
         Map<String, String> beforeModels = new HashMap<>();
         EngineType engineType = EngineType.fromString(schema.getOntology().getDatabase().getType());
 
-        for (ModelResp dataModel : dataModels) {
+        // Sort models based on join relationships to respect join order
+        List<ModelResp> orderedModels = sortModelsByJoinRelations(dataModels, schema.getJoinRelations());
+
+        for (ModelResp dataModel : orderedModels) {
             final Set<DimSchemaResp> queryDimensions =
                     ontologyQuery.getDimensionsByModel(dataModel.getName());
             final Set<MetricSchemaResp> queryMetrics =
@@ -202,6 +208,107 @@ public class SqlBuilder {
         return outerTable;
     }
 
+    /**
+     * Sort models based on join relationships to maintain proper join order
+     */
+    private List<ModelResp> sortModelsByJoinRelations(Set<ModelResp> dataModels, List<JoinRelation> joinRelations) {
+        if (CollectionUtils.isEmpty(joinRelations) || dataModels.size() <= 1) {
+            return new ArrayList<>(dataModels);
+        }
+
+        // Create a map of model names to their ModelResp objects
+        Map<String, ModelResp> modelMap = dataModels.stream()
+                .collect(Collectors.toMap(ModelResp::getName, m -> m));
+
+        List<ModelResp> orderedModels = new ArrayList<>();
+        Set<String> processedModels = new HashSet<>();
+
+        Set<String> leftModels = joinRelations.stream()
+                .map(JoinRelation::getLeft)
+                .collect(Collectors.toSet());
+        Set<String> rightModels = joinRelations.stream()
+                .map(JoinRelation::getRight)
+                .collect(Collectors.toSet());
+
+        // Find potential starting models
+        Set<String> startModels = new HashSet<>(leftModels);
+        startModels.removeAll(rightModels);
+
+        // If no clear left-most model, look for models with LEFT JOIN type as left
+        if (startModels.isEmpty()) {
+            for (JoinRelation relation : joinRelations) {
+                if ("left join".equalsIgnoreCase(relation.getJoinType())) {
+                    startModels.add(relation.getLeft());
+                }
+            }
+        }
+
+        // If still no starting model, just use the first available model
+        String startModel = startModels.isEmpty() ?
+                dataModels.iterator().next().getName() :
+                startModels.iterator().next();
+
+        // Add start model if it's in our dataset
+        if (modelMap.containsKey(startModel)) {
+            orderedModels.add(modelMap.get(startModel));
+            processedModels.add(startModel);
+        }
+
+        // Build the rest of the order by following join relationships
+        while (orderedModels.size() < dataModels.size()) {
+            boolean addedModel = false;
+
+            // First try to follow explicit join relationships
+            for (JoinRelation relation : joinRelations) {
+                String leftModel = relation.getLeft();
+                String rightModel = relation.getRight();
+
+                // If we've processed the left model but not the right, add the right
+                if (processedModels.contains(leftModel) && !processedModels.contains(rightModel)
+                        && modelMap.containsKey(rightModel)) {
+                    orderedModels.add(modelMap.get(rightModel));
+                    processedModels.add(rightModel);
+                    addedModel = true;
+                    break;
+                }
+
+                // For RIGHT JOIN, if we've processed the right but not the left, add the left
+                if ("right join".equalsIgnoreCase(relation.getJoinType())
+                        && processedModels.contains(rightModel) && !processedModels.contains(leftModel)
+                        && modelMap.containsKey(leftModel)) {
+                    orderedModels.add(modelMap.get(leftModel));
+                    processedModels.add(leftModel);
+                    addedModel = true;
+                    break;
+                }
+            }
+
+            // If we couldn't add a model based on relationships, add any remaining model
+            if (!addedModel) {
+                for (ModelResp model : dataModels) {
+                    if (!processedModels.contains(model.getName())) {
+                        orderedModels.add(model);
+                        processedModels.add(model.getName());
+                        break;
+                    }
+                }
+            }
+
+            // If we haven't added any models in this iteration, break to avoid infinite loop
+            if (!addedModel && processedModels.size() == orderedModels.size()) {
+                // Add any remaining models
+                for (ModelResp model : dataModels) {
+                    if (!processedModels.contains(model.getName())) {
+                        orderedModels.add(model);
+                        processedModels.add(model.getName());
+                    }
+                }
+            }
+        }
+
+        return orderedModels;
+    }
+
     private SqlNode getTable(TableView tableView) {
         return SemanticNode.getTable(tableView.getTable());
     }
@@ -233,26 +340,51 @@ public class SqlBuilder {
         JoinRelation matchJoinRelation = JoinRelation.builder().build();
         if (!CollectionUtils.isEmpty(schema.getJoinRelations())) {
             for (JoinRelation joinRelation : schema.getJoinRelations()) {
+                log.info("joinRelation: {}", joinRelation);
+                log.info("before: {}", before);
+                // Case 1: Current table is the right side of join relation
                 if (joinRelation.getRight().equalsIgnoreCase(tableView.getDataModel().getName())
                         && before.containsKey(joinRelation.getLeft())) {
+                    // This is the correct direction - use join conditions as is
                     matchJoinRelation.setJoinCondition(joinRelation.getJoinCondition().stream()
                             .map(r -> Triple.of(
                                     before.get(joinRelation.getLeft()) + "." + r.getLeft(),
                                     r.getMiddle(), tableView.getAlias() + "." + r.getRight()))
                             .collect(Collectors.toList()));
                     matchJoinRelation.setJoinType(joinRelation.getJoinType());
-                    // Added join condition judgment to solve the problem of join condition order
-                } else if (joinRelation.getLeft()
-                        .equalsIgnoreCase(tableView.getDataModel().getName())
+                    // Found correct join direction, prioritize this and exit early
+                    // return matchJoinRelation;
+                }
+                // Case 2: Current table is the left side of join relation
+                else if (joinRelation.getLeft().equalsIgnoreCase(tableView.getDataModel().getName())
                         && before.containsKey(joinRelation.getRight())) {
+                    String joinType = joinRelation.getJoinType();
+                    // // Need to flip join type if it's LEFT or RIGHT join
+                    // if ("left join".equalsIgnoreCase(joinType)) {
+                    //     joinType = "right join";
+                    // } else if ("right join".equalsIgnoreCase(joinType)) {
+                    //     joinType = "left join";
+                    // }
+
                     List<Triple<String, String, String>> candidateJoinCon = joinRelation
                             .getJoinCondition().stream()
-                            .map(r -> Triple.of(
-                                    before.get(joinRelation.getRight()) + "." + r.getRight(),
-                                    r.getMiddle(), tableView.getAlias() + "." + r.getLeft()))
+                            .map(r -> {
+                                String operator = r.getMiddle();
+                                operator = switch (operator.trim().toUpperCase()) {
+                                    // case "<" -> ">";
+                                    // case "<=" -> ">=";
+                                    // case ">" -> "<";
+                                    // case ">=" -> "<=";
+                                    default -> operator;
+                                };
+                                return Triple.of(
+                                        before.get(joinRelation.getRight()) + "." + r.getRight(),
+                                        operator, tableView.getAlias() + "." + r.getLeft());
+                            })
                             .collect(Collectors.toList());
-                    // added by jerryjzhang on 20250214
-                    // use the one with the most conditions to join left and right tables
+
+                    // Only use this join relation if we don't already have a direct match
+                    // or if this one has more conditions
                     if (matchJoinRelation.getJoinCondition() == null || candidateJoinCon
                             .size() > matchJoinRelation.getJoinCondition().size()) {
                         matchJoinRelation.setJoinCondition(candidateJoinCon);
@@ -346,6 +478,7 @@ public class SqlBuilder {
             log.error("Failed to create sqlNode for data model {}", dataModel);
         }
 
+        log.info("renderOne tableView: {}", tableView);
         return tableView;
     }
 

@@ -11,6 +11,7 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Data
@@ -25,6 +26,10 @@ public class TableView {
     private String alias;
     private List<String> primary;
     private ModelResp dataModel;
+    
+    // Static fields for coalesce functionality
+    private static boolean needsCoalesce = false;
+    private static List<Map<String, String>> joinInfoList = new ArrayList<>();
 
     public SqlNode build() {
         List<SqlNode> selectNodeList = new ArrayList<>();
@@ -39,5 +44,39 @@ public class TableView {
                     null, null, order, offset, fetch, null);
         }
     }
-
+    
+    /**
+     * Set whether coalesce is needed for this join
+     * @param needs boolean indicating if coalesce is needed
+     */
+    public static void setNeedsCoalesce(boolean needs) {
+        needsCoalesce = needs;
+    }
+    
+    /**
+     * Check if coalesce is needed for joins
+     * @return true if coalesce is needed
+     */
+    public static boolean isNeedsCoalesce() {
+        return needsCoalesce;
+    }
+    
+    /**
+     * Add join information for coalesce processing
+     * @param joinInfo Map containing join information
+     */
+    public static void addJoinInfo(Map<String, String> joinInfo) {
+        if (joinInfoList == null) {
+            joinInfoList = new ArrayList<>();
+        }
+        joinInfoList.add(joinInfo);
+    }
+    
+    /**
+     * Get all join information
+     * @return List of join information maps
+     */
+    public static List<Map<String, String>> getJoinInfoList() {
+        return joinInfoList;
+    }
 }
