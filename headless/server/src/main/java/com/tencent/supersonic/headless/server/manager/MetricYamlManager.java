@@ -31,7 +31,7 @@ public class MetricYamlManager {
     public static MetricYamlTpl convert2MetricYamlTpl(MetricResp metric) {
         MetricYamlTpl metricYamlTpl = new MetricYamlTpl();
         BeanUtils.copyProperties(metric, metricYamlTpl);
-        metricYamlTpl.setName(metric.getBizName());
+        metricYamlTpl.setName(metric.getName());
         metricYamlTpl.setOwners(Lists.newArrayList(metric.getCreatedBy()));
         MetricTypeParamsYamlTpl metricTypeParamsYamlTpl = new MetricTypeParamsYamlTpl();
         if (MetricDefineType.MEASURE.equals(metric.getMetricDefineType())) {
@@ -61,7 +61,9 @@ public class MetricYamlManager {
 
     public static MeasureYamlTpl convert(Measure measure) {
         MeasureYamlTpl measureYamlTpl = new MeasureYamlTpl();
-        measureYamlTpl.setName(measure.getBizName());
+        measureYamlTpl.setName(measure.getName());
+        measureYamlTpl.setExpr(measure.getExpr());
+        measureYamlTpl.setAlias(measure.getAlias());
         measureYamlTpl.setConstraint(measure.getConstraint());
         measureYamlTpl.setAgg(measure.getAgg());
         return measureYamlTpl;

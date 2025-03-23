@@ -163,10 +163,11 @@ public class SemanticSchemaManager {
         List<Measure> measures = new ArrayList<>();
         for (MeasureYamlTpl measureYamlTpl : measureYamlTpls) {
             Measure measure = new Measure();
+            measure.setName(measureYamlTpl.getName());
+            measure.setBizName(measureYamlTpl.getExpr());
+            measure.setAlias(measureYamlTpl.getAlias());
             measure.setExpr(measureYamlTpl.getExpr());
             measure.setAgg(measureYamlTpl.getAgg());
-            measure.setName(measureYamlTpl.getName());
-            measure.setAlias(measureYamlTpl.getAlias());
             measure.setConstraint(measureYamlTpl.getConstraint());
             measures.add(measure);
         }
@@ -204,8 +205,10 @@ public class SemanticSchemaManager {
         List<Identify> identifies = new ArrayList<>();
         for (IdentifyYamlTpl identifyYamlTpl : identifyYamlTpls) {
             Identify identify = new Identify();
-            identify.setType(identifyYamlTpl.getType());
             identify.setName(identifyYamlTpl.getName());
+            identify.setBizName(identifyYamlTpl.getBizName());
+            identify.setFieldName(identifyYamlTpl.getFieldName());
+            identify.setType(identifyYamlTpl.getType());
             identifies.add(identify);
         }
         return identifies;

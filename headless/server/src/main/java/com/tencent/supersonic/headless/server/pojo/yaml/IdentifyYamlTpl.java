@@ -11,6 +11,10 @@ public class IdentifyYamlTpl {
 
     private String name;
 
+    private String bizName;
+
+    private String fieldName;
+
     /** 主键 primary 外键 foreign */
     private String type;
 }

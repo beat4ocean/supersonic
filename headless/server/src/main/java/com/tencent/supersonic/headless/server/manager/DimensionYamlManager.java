@@ -30,7 +30,9 @@ public class DimensionYamlManager {
     public static DimensionYamlTpl convert2DimensionYamlTpl(DimensionResp dimension) {
         DimensionYamlTpl dimensionYamlTpl = new DimensionYamlTpl();
         BeanUtils.copyProperties(dimension, dimensionYamlTpl);
-        dimensionYamlTpl.setName(dimension.getBizName());
+        dimensionYamlTpl.setName(dimension.getName());
+        dimensionYamlTpl.setBizName(dimension.getBizName());
+        dimensionYamlTpl.setExpr(dimension.getExpr());
         dimensionYamlTpl.setOwners(dimension.getCreatedBy());
         return dimensionYamlTpl;
     }

@@ -3,8 +3,7 @@ package com.tencent.supersonic.headless.core.translator.parser.calcite;
 import com.google.common.collect.Sets;
 import com.tencent.supersonic.common.calcite.Configuration;
 import com.tencent.supersonic.common.pojo.enums.EngineType;
-import com.tencent.supersonic.headless.api.pojo.Dimension;
-import com.tencent.supersonic.headless.api.pojo.Identify;
+import com.tencent.supersonic.headless.api.pojo.*;
 import com.tencent.supersonic.headless.api.pojo.enums.IdentifyType;
 import com.tencent.supersonic.headless.api.pojo.response.DatabaseResp;
 import com.tencent.supersonic.headless.api.pojo.response.DimSchemaResp;
@@ -91,7 +90,7 @@ public class SqlBuilder {
         GraphPath<String, DefaultEdge> selectedGraphPath = null;
         for (String fromModel : queryModels) {
             for (String toModel : queryModels) {
-                if (fromModel != toModel) {
+                if (!fromModel.equals(toModel)) {
                     GraphPath<String, DefaultEdge> path = dijkstraAlg.getPath(fromModel, toModel);
                     if (isGraphPathContainsAll(path, queryModels)) {
                         selectedGraphPath = path;
@@ -122,7 +121,7 @@ public class SqlBuilder {
         Collection<String> intersect =
                 org.apache.commons.collections.CollectionUtils.intersection(vertex, allVertex);
 
-        return intersect.size() == vertex.size() ? true : false;
+        return intersect.size() == vertex.size();
     }
 
     private Graph<String, DefaultEdge> buildGraph(List<JoinRelation> joinRelations) {
@@ -167,34 +166,60 @@ public class SqlBuilder {
         EngineType engineType = EngineType.fromString(schema.getOntology().getDatabase().getType());
 
         // Sort models based on join relationships to respect join order
-        List<ModelResp> orderedModels = sortModelsByJoinRelations(dataModels, schema.getJoinRelations());
+        List<JoinRelation> joinRelations = schema.getJoinRelations();
+        List<ModelResp> orderedModels = sortModelsByJoinRelations(dataModels, joinRelations);
+
+        // Create a mapping from semantic names to table field info
+        Map<String, Map<String, FieldInfo>> semanticFieldMap = buildSemanticFieldInfo(orderedModels);
+
+        // Create a mapping for join relationships
+        Map<String, Map<String, List<JoinFieldInfo>>> joinFieldsMap = buildJoinFieldsInfo(joinRelations);
+
+        // Track table priorities based on join types
+        Map<String, Integer> tablePriorities = calculateTablePriorities(joinRelations);
 
         for (ModelResp dataModel : orderedModels) {
-            final Set<DimSchemaResp> queryDimensions =
-                    ontologyQuery.getDimensionsByModel(dataModel.getName());
-            final Set<MetricSchemaResp> queryMetrics =
-                    ontologyQuery.getMetricsByModel(dataModel.getName());
+            final Set<DimSchemaResp> queryDimensions = ontologyQuery.getDimensionsByModel(dataModel.getName());
+            final Set<MetricSchemaResp> queryMetrics = ontologyQuery.getMetricsByModel(dataModel.getName());
 
             List<String> primary = new ArrayList<>();
             for (Identify identify : dataModel.getIdentifiers()) {
-                primary.add(identify.getName());
+                primary.add(identify.getBizName());
             }
 
-            TableView tableView =
-                    renderOne(queryMetrics, queryDimensions, dataModel, scope, schema);
+            TableView tableView = renderOne(queryMetrics, queryDimensions, dataModel, scope, schema);
             log.info("tableView {}", StringUtils.normalizeSpace(tableView.getTable().toString()));
-            String alias = Constants.JOIN_TABLE_PREFIX + dataModel.getName();
+            String alias = dataModel.getName() + Constants.JOIN_TABLE_SURFIX;
             tableView.setAlias(alias);
             tableView.setPrimary(primary);
             tableView.setDataModel(dataModel);
+
+            // Add current model to priority map if not present
+            tablePriorities.putIfAbsent(dataModel.getName(), 10000); // Default high priority for current model
+
+            // Process each field in the current table
             for (String field : tableView.getFields()) {
-                outerSelect.put(field, SemanticNode.parse(alias + "." + field, scope, engineType));
+                // Find semantic name for this field
+                String semanticName = findSemanticName(field, dataModel);
+
+                // Determine if this is a join field
+                if (joinFieldsMap.containsKey(dataModel.getName()) && joinFieldsMap.get(dataModel.getName()).containsKey(field)) {
+                    processJoinField(field, dataModel.getName(), alias, joinFieldsMap, tablePriorities,
+                            outerSelect, scope, engineType);
+                } else if (semanticFieldMap.containsKey(semanticName) && semanticFieldMap.get(semanticName).size() > 1 && leftTable != null) {
+                    // Field has same semantics in multiple tables
+                    processSemanticField(field, semanticName, dataModel.getName(), alias,
+                            beforeModels, semanticFieldMap, tablePriorities, outerSelect, scope, engineType);
+                } else {
+                    // Field only in current table
+                    outerSelect.put(field, SemanticNode.parse(alias + "." + field, scope, engineType));
+                }
             }
+
             if (left == null) {
                 left = SemanticNode.buildAs(tableView.getAlias(), getTable(tableView));
             } else {
-                left = buildJoin(left, leftTable, tableView, beforeModels, dataModel, schema,
-                        scope);
+                left = buildJoin(left, leftTable, tableView, beforeModels, dataModel, schema, scope);
             }
             leftTable = tableView;
             beforeModels.put(dataModel.getName(), leftTable.getAlias());
@@ -203,9 +228,288 @@ public class SqlBuilder {
         for (Map.Entry<String, SqlNode> entry : outerSelect.entrySet()) {
             outerTable.getSelect().add(entry.getValue());
         }
-        outerTable.setTable(left);
 
+        outerTable.setTable(left);
         return outerTable;
+    }
+
+    /**
+     * Build a mapping from semantic names to table field info
+     */
+    private Map<String, Map<String, FieldInfo>> buildSemanticFieldInfo(List<ModelResp> models) {
+        Map<String, Map<String, FieldInfo>> semanticFieldMap = new HashMap<>();
+
+        for (ModelResp model : models) {
+            String modelName = model.getName();
+
+            // Process dimensions
+            for (Dimension dimension : model.getModelDetail().getDimensions()) {
+                String fieldName = dimension.getFieldName();
+                String semanticName = dimension.getName();
+                if (StringUtils.isBlank(semanticName)) {
+                    semanticName = fieldName;
+                }
+                semanticFieldMap.computeIfAbsent(semanticName, k -> new HashMap<>())
+                        .put(modelName, new FieldInfo(modelName, fieldName, false, 0));
+            }
+
+            // Process measures
+            for (Measure measure : model.getModelDetail().getMeasures()) {
+                String fieldName = measure.getFieldName();
+                String semanticName = measure.getName();
+                if (StringUtils.isBlank(semanticName)) {
+                    semanticName = fieldName;
+                }
+                semanticFieldMap.computeIfAbsent(semanticName, k -> new HashMap<>())
+                        .put(modelName, new FieldInfo(modelName, fieldName, false, 0));
+            }
+
+            // Process identifiers
+            for (Identify identify : model.getIdentifiers()) {
+                String fieldName = identify.getFieldName();
+                String semanticName = identify.getName();
+                if (StringUtils.isBlank(semanticName)) {
+                    semanticName = fieldName;
+                }
+                semanticFieldMap.computeIfAbsent(semanticName, k -> new HashMap<>())
+                        .put(modelName, new FieldInfo(modelName, fieldName, true, 0));
+            }
+        }
+
+        return semanticFieldMap;
+    }
+
+    /**
+     * Build a mapping for join relationships
+     */
+    private Map<String, Map<String, List<JoinFieldInfo>>> buildJoinFieldsInfo(List<JoinRelation> joinRelations) {
+        Map<String, Map<String, List<JoinFieldInfo>>> joinFieldsMap = new HashMap<>();
+
+        if (CollectionUtils.isEmpty(joinRelations)) {
+            return joinFieldsMap;
+        }
+
+        for (JoinRelation joinRelation : joinRelations) {
+            if (CollectionUtils.isEmpty(joinRelation.getJoinCondition())) {
+                continue;
+            }
+
+            String leftModel = joinRelation.getLeft();
+            String rightModel = joinRelation.getRight();
+            String joinType = joinRelation.getJoinType();
+
+            for (Triple<String, String, String> condition : joinRelation.getJoinCondition()) {
+                String leftField = condition.getLeft();
+                String operator = condition.getMiddle();
+                String rightField = condition.getRight();
+
+                if (operator.equals("=")) {
+                    // Add left -> right mapping
+                    joinFieldsMap.computeIfAbsent(leftModel, k -> new HashMap<>())
+                            .computeIfAbsent(leftField, k -> new ArrayList<>())
+                            .add(new JoinFieldInfo(leftModel, leftField, rightModel, rightField, joinType));
+
+                    // Add right -> left mapping
+                    joinFieldsMap.computeIfAbsent(rightModel, k -> new HashMap<>())
+                            .computeIfAbsent(rightField, k -> new ArrayList<>())
+                            .add(new JoinFieldInfo(rightModel, rightField, leftModel, leftField, joinType));
+                }
+            }
+        }
+
+        return joinFieldsMap;
+    }
+
+    /**
+     * Calculate table priorities based on join types
+     */
+    private Map<String, Integer> calculateTablePriorities(List<JoinRelation> joinRelations) {
+        Map<String, Integer> tablePriorities = new HashMap<>();
+
+        if (CollectionUtils.isEmpty(joinRelations)) {
+            return tablePriorities;
+        }
+
+        for (JoinRelation joinRelation : joinRelations) {
+            String leftModel = joinRelation.getLeft();
+            String rightModel = joinRelation.getRight();
+            String joinType = joinRelation.getJoinType();
+
+            if ("left join".equalsIgnoreCase(joinType)) {
+                // Left table has higher priority in LEFT JOIN
+                tablePriorities.put(leftModel, tablePriorities.getOrDefault(leftModel, 0) + 10);
+                tablePriorities.put(rightModel, tablePriorities.getOrDefault(rightModel, 0) + 5);
+            } else if ("right join".equalsIgnoreCase(joinType)) {
+                // Right table has higher priority in RIGHT JOIN
+                tablePriorities.put(rightModel, tablePriorities.getOrDefault(rightModel, 0) + 10);
+                tablePriorities.put(leftModel, tablePriorities.getOrDefault(leftModel, 0) + 5);
+            } else if ("inner join".equalsIgnoreCase(joinType) || "full join".equalsIgnoreCase(joinType)) {
+                // Left table has slightly higher priority in INNER/FULL JOIN
+                tablePriorities.put(leftModel, tablePriorities.getOrDefault(leftModel, 0) + 7);
+                tablePriorities.put(rightModel, tablePriorities.getOrDefault(rightModel, 0) + 6);
+            } else {
+                // Default case, equal priority
+                tablePriorities.put(leftModel, tablePriorities.getOrDefault(leftModel, 0) + 5);
+                tablePriorities.put(rightModel, tablePriorities.getOrDefault(rightModel, 0) + 5);
+            }
+        }
+
+        return tablePriorities;
+    }
+
+    /**
+     * Find semantic name for a field
+     */
+    private String findSemanticName(String field, ModelResp dataModel) {
+        // Try to find in dimensions
+        for (Dimension dimension : dataModel.getModelDetail().getDimensions()) {
+            if (dimension.getFieldName().equalsIgnoreCase(field) ||
+                    dimension.getBizName().equalsIgnoreCase(field)) {
+                return dimension.getName();
+            }
+        }
+
+        // Try to find in measures
+        for (Measure measure : dataModel.getModelDetail().getMeasures()) {
+            if (measure.getFieldName().equalsIgnoreCase(field) ||
+                    measure.getBizName().equalsIgnoreCase(field)) {
+                return measure.getName();
+            }
+        }
+
+        // Try to find in identifiers // ok
+        for (Identify identify : dataModel.getIdentifiers()) {
+            if (identify.getFieldName().equalsIgnoreCase(field) ||
+                    identify.getBizName().equalsIgnoreCase(field)) {
+                return identify.getName();
+            }
+        }
+
+        // If not found, use field name as backup
+        return field;
+    }
+
+    /**
+     * Process a field that is part of join conditions
+     */
+    private void processJoinField(String field, String modelName, String alias,
+            Map<String, Map<String, List<JoinFieldInfo>>> joinFieldsMap,
+            Map<String, Integer> tablePriorities, Map<String, SqlNode> outerSelect,
+            SqlValidatorScope scope, EngineType engineType) throws Exception {
+
+        List<JoinFieldInfo> joinInfos = joinFieldsMap.get(modelName).get(field);
+        List<FieldInfo> fieldPairs = new ArrayList<>();
+
+        // Add the current field
+        fieldPairs.add(new FieldInfo(modelName, field, false, tablePriorities.getOrDefault(modelName, 0)));
+
+        // Add fields from related models that have already been processed
+        for (JoinFieldInfo joinInfo : joinInfos) {
+            String targetModel = joinInfo.targetModel;
+            String targetField = joinInfo.targetField;
+
+            int priority = tablePriorities.getOrDefault(targetModel, 0);
+
+            // Adjust priority based on join type
+            if ("left join".equalsIgnoreCase(joinInfo.joinType) && modelName.equals(joinInfo.sourceModel)) {
+                priority += 5; // Left table in LEFT JOIN gets higher priority
+            } else if ("right join".equalsIgnoreCase(joinInfo.joinType) && modelName.equals(joinInfo.targetModel)) {
+                priority += 5; // Right table in RIGHT JOIN gets higher priority
+            }
+
+            fieldPairs.add(new FieldInfo(targetModel, targetField, false, priority));
+        }
+
+        // Sort by priority (higher first)
+        fieldPairs.sort((a, b) -> Integer.compare(b.priority, a.priority));
+
+        // Build COALESCE if we have multiple fields
+        if (fieldPairs.size() > 1) {
+            List<SqlNode> coalesceArgs = new ArrayList<>();
+
+            for (FieldInfo pair : fieldPairs) {
+                coalesceArgs.add(SemanticNode.parse(
+                        pair.modelName + Constants.JOIN_TABLE_SURFIX + "." + pair.fieldName, scope, engineType));
+            }
+
+            SqlNode coalesceNode = SqlStdOperatorTable.COALESCE.createCall(
+                    SqlParserPos.ZERO,
+                    coalesceArgs.toArray(new SqlNode[0])
+            );
+
+            SqlNode fieldNode = SqlStdOperatorTable.AS.createCall(
+                    SqlParserPos.ZERO,
+                    coalesceNode,
+                    new SqlIdentifier(field, SqlParserPos.ZERO)
+            );
+
+            outerSelect.put(field, fieldNode);
+            log.info("processJoinField: {}", outerSelect);
+        } else {
+            // Just use current field
+            outerSelect.put(field, SemanticNode.parse(alias + "." + field, scope, engineType));
+        }
+    }
+
+    /**
+     * Process a field that has same semantics in multiple tables
+     */
+    private void processSemanticField(String field, String semanticName, String modelName,
+            String alias, Map<String, String> beforeModels,
+            Map<String, Map<String, FieldInfo>> semanticFieldMap, Map<String, Integer> tablePriorities,
+            Map<String, SqlNode> outerSelect, SqlValidatorScope scope, EngineType engineType) throws Exception {
+
+        Map<String, FieldInfo> tableFieldMap = semanticFieldMap.get(semanticName);
+        List<FieldInfo> fieldPairs = new ArrayList<>();
+
+        // Add the current field
+        fieldPairs.add(new FieldInfo(modelName, field, false, tablePriorities.getOrDefault(modelName, 0)));
+
+        // Add fields from other models with same semantics that have already been processed
+        for (Map.Entry<String, FieldInfo> entry : tableFieldMap.entrySet()) {
+            String otherModel = entry.getKey();
+            FieldInfo fieldInfo = entry.getValue();
+
+            if (!otherModel.equals(modelName) && beforeModels.containsKey(otherModel)) {
+                int priority = tablePriorities.getOrDefault(otherModel, 0);
+
+                // Adjust priority for primary keys
+                if (fieldInfo.isPrimary) {
+                    priority += 3;
+                }
+
+                fieldPairs.add(new FieldInfo(otherModel, fieldInfo.fieldName, fieldInfo.isPrimary, priority));
+            }
+        }
+
+        // Sort by priority (higher first)
+        fieldPairs.sort((a, b) -> Integer.compare(b.priority, a.priority));
+
+        // Build COALESCE if we have multiple fields
+        if (fieldPairs.size() > 1) {
+            List<SqlNode> coalesceArgs = new ArrayList<>();
+
+            for (FieldInfo pair : fieldPairs) {
+                coalesceArgs.add(SemanticNode.parse(
+                        pair.modelName + Constants.JOIN_TABLE_SURFIX + "." + pair.fieldName, scope, engineType));
+            }
+
+            SqlNode coalesceNode = SqlStdOperatorTable.COALESCE.createCall(
+                    SqlParserPos.ZERO,
+                    coalesceArgs.toArray(new SqlNode[0])
+            );
+
+            SqlNode fieldNode = SqlStdOperatorTable.AS.createCall(
+                    SqlParserPos.ZERO,
+                    coalesceNode,
+                    new SqlIdentifier(field, SqlParserPos.ZERO)
+            );
+
+            outerSelect.put(field, fieldNode);
+        } else {
+            // Just use current field
+            outerSelect.put(field, SemanticNode.parse(alias + "." + field, scope, engineType));
+        }
     }
 
     /**
@@ -457,16 +761,16 @@ public class SqlBuilder {
     }
 
     public static TableView renderOne(Set<MetricSchemaResp> queryMetrics,
-            Set<DimSchemaResp> queryDimensions, ModelResp dataModel, SqlValidatorScope scope,
-            S2CalciteSchema schema) {
+                                      Set<DimSchemaResp> queryDimensions, ModelResp dataModel, SqlValidatorScope scope,
+                                      S2CalciteSchema schema) {
         TableView tableView = new TableView();
         EngineType engineType = EngineType.fromString(schema.getOntology().getDatabase().getType());
         Set<String> queryFields = tableView.getFields();
         if (Objects.nonNull(queryMetrics)) {
-            queryMetrics.stream().forEach(m -> queryFields.addAll(m.getFields()));
+            queryMetrics.forEach(m -> queryFields.addAll(m.getFields()));
         }
         if (Objects.nonNull(queryDimensions)) {
-            queryDimensions.stream().forEach(d -> queryFields.addAll(d.getFields()));
+            queryDimensions.forEach(d -> queryFields.addAll(d.getFields()));
         }
 
         try {
@@ -489,23 +793,21 @@ public class SqlBuilder {
             return true;
         }
         Optional<Identify> identify = dataModel.getIdentifiers().stream()
-                .filter(i -> i.getName().equalsIgnoreCase(name)).findFirst();
+                .filter(i -> i.getBizName().equalsIgnoreCase(name)).findFirst();
         if (identify.isPresent()) {
             return true;
         }
         if (schema.getDimensions().containsKey(dataModel.getName())) {
             Optional<DimSchemaResp> dataSourceDim = schema.getDimensions().get(dataModel.getName())
                     .stream().filter(d -> d.getName().equalsIgnoreCase(name)).findFirst();
-            if (dataSourceDim.isPresent()) {
-                return true;
-            }
+            return dataSourceDim.isPresent();
         }
         return false;
     }
 
     private static boolean isForeign(String name, List<Identify> identifies) {
         Optional<Identify> identify =
-                identifies.stream().filter(i -> i.getName().equalsIgnoreCase(name)).findFirst();
+                identifies.stream().filter(i -> i.getBizName().equalsIgnoreCase(name)).findFirst();
         if (identify.isPresent()) {
             return IdentifyType.foreign.equals(identify.get().getType());
         }
@@ -514,11 +816,10 @@ public class SqlBuilder {
 
     private static boolean isPrimary(String name, List<Identify> identifies) {
         Optional<Identify> identify =
-                identifies.stream().filter(i -> i.getName().equalsIgnoreCase(name)).findFirst();
+                identifies.stream().filter(i -> i.getBizName().equalsIgnoreCase(name)).findFirst();
         if (identify.isPresent()) {
             return IdentifyType.primary.equals(identify.get().getType());
         }
         return false;
     }
-
 }

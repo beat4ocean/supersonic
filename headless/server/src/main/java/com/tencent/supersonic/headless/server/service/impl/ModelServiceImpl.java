@@ -299,7 +299,7 @@ public class ModelServiceImpl implements ModelService {
     }
 
     private void checkRelations(ModelReq modelReq) {
-        List<ModelRela> modelRelas = modelRelaService.getModelRela(Arrays.asList(modelReq.getId()));
+        List<ModelRela> modelRelas = modelRelaService.getModelRela(Collections.singletonList(modelReq.getId()));
         if (CollectionUtils.isEmpty(modelRelas)) {
             return;
         }
@@ -321,7 +321,7 @@ public class ModelServiceImpl implements ModelService {
             throw new InvalidArgumentException("模型关联中主键/外键不存在, 请检查");
         }
         List<String> modelIdentifiers = modelReq.getModelDetail().getIdentifiers().stream()
-                .map(Identify::getBizName).collect(Collectors.toList());
+                .map(Identify::getBizName).toList();
         for (String rela : relations) {
             if (!modelIdentifiers.contains(rela)) {
                 throw new InvalidArgumentException(String.format("模型关联中主键/外键(%s)不存在, 请检查", rela));

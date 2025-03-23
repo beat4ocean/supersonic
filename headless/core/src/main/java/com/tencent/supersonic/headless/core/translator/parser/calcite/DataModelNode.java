@@ -90,10 +90,10 @@ public class DataModelNode extends SemanticNode {
             List<SqlNode> identifiers =
                     expand(SemanticNode.parse(d.getExpr(), scope, engineType), scope);
             identifiers.forEach(i -> dimensions.add(i.toString()));
-            dimensions.add(d.getName());
+            dimensions.add(d.getBizName());
         }
         for (Identify i : dataModel.getIdentifiers()) {
-            dimensions.add(i.getName());
+            dimensions.add(i.getBizName());
         }
         for (Measure m : dataModel.getMeasures()) {
             List<SqlNode> identifiers =
@@ -233,7 +233,7 @@ public class DataModelNode extends SemanticNode {
                 .collect(Collectors.toSet());
         Set<String> baseDimensions = baseDataModel.getModelDetail().getDimensions().stream()
                 .map(Dimension::getName).collect(Collectors.toSet());
-        baseDataModel.getIdentifiers().forEach(i -> baseDimensions.add(i.getName()));
+        baseDataModel.getIdentifiers().forEach(i -> baseDimensions.add(i.getBizName()));
 
         baseMeasures.retainAll(queryMeasures);
         if (baseMeasures.size() < queryMeasures.size()) {
@@ -288,9 +288,9 @@ public class DataModelNode extends SemanticNode {
                         : joinRelation.getJoinCondition().get(0).getLeft();
                 if (!queryDimensions.isEmpty()) {
                     Set<String> linkDimension = other.getModelDetail().getDimensions().stream()
-                            .map(Dimension::getName).collect(Collectors.toSet());
+                            .map(Dimension::getBizName).collect(Collectors.toSet());
                     other.getModelDetail().getIdentifiers()
-                            .forEach(i -> linkDimension.add(i.getName()));
+                            .forEach(i -> linkDimension.add(i.getBizName()));
                     linkDimension.retainAll(queryDimensions);
                     if (!linkDimension.isEmpty()) {
                         isMatch = true;
@@ -362,7 +362,7 @@ public class DataModelNode extends SemanticNode {
     private static List<ModelResp> findRelatedModelsByIdentifier(Ontology ontology,
             ModelResp baseDataModel, Set<String> queryDimension, Set<String> measures) {
         Set<String> baseIdentifiers = baseDataModel.getModelDetail().getIdentifiers().stream()
-                .map(Identify::getName).collect(Collectors.toSet());
+                .map(Identify::getBizName).collect(Collectors.toSet());
         if (baseIdentifiers.isEmpty()) {
             return Collections.EMPTY_LIST;
         }
@@ -374,14 +374,14 @@ public class DataModelNode extends SemanticNode {
                 continue;
             }
             long identifierNum = entry.getValue().getModelDetail().getIdentifiers().stream()
-                    .map(Identify::getName).filter(baseIdentifiers::contains).count();
+                    .map(Identify::getBizName).filter(baseIdentifiers::contains).count();
             if (identifierNum > 0) {
                 boolean isMatch = false;
                 if (!queryDimension.isEmpty()) {
                     Set<String> linkDimension = entry.getValue().getModelDetail().getDimensions()
                             .stream().map(Dimension::getName).collect(Collectors.toSet());
                     entry.getValue().getModelDetail().getIdentifiers()
-                            .forEach(i -> linkDimension.add(i.getName()));
+                            .forEach(i -> linkDimension.add(i.getBizName()));
                     linkDimension.retainAll(queryDimension);
                     if (!linkDimension.isEmpty()) {
                         isMatch = true;

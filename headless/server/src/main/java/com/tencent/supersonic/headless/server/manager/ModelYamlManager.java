@@ -45,7 +45,7 @@ public class ModelYamlManager {
     public static DimensionYamlTpl convert(Dimension dim) {
         DimensionYamlTpl dimensionYamlTpl = new DimensionYamlTpl();
         BeanUtils.copyProperties(dim, dimensionYamlTpl);
-        dimensionYamlTpl.setName(dim.getBizName());
+        dimensionYamlTpl.setName(dim.getName());
         if (Objects.isNull(dimensionYamlTpl.getExpr())) {
             dimensionYamlTpl.setExpr(dim.getBizName());
         }
@@ -61,13 +61,17 @@ public class ModelYamlManager {
     public static MeasureYamlTpl convert(Measure measure) {
         MeasureYamlTpl measureYamlTpl = new MeasureYamlTpl();
         BeanUtils.copyProperties(measure, measureYamlTpl);
-        measureYamlTpl.setName(measure.getBizName());
+        measureYamlTpl.setName(measure.getName());
+        measureYamlTpl.setExpr(measure.getExpr());
+        measureYamlTpl.setAlias(measure.getAlias());
         return measureYamlTpl;
     }
 
     public static IdentifyYamlTpl convert(Identify identify) {
         IdentifyYamlTpl identifyYamlTpl = new IdentifyYamlTpl();
-        identifyYamlTpl.setName(identify.getBizName());
+        identifyYamlTpl.setName(identify.getName());
+        identifyYamlTpl.setBizName(identify.getBizName());
+        identifyYamlTpl.setFieldName(identify.getFieldName());
         identifyYamlTpl.setType(identify.getType());
         return identifyYamlTpl;
     }
