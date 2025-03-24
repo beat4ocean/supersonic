@@ -204,7 +204,7 @@ public class SqlBuilder {
 
                 // Determine if this is a join field
                 if (joinFieldsInfo.containsKey(dataModel.getName()) && joinFieldsInfo.get(dataModel.getName()).containsKey(field)) {
-                    processJoinField(field, dataModel.getName(), alias, orderedModels, joinFieldsInfo,
+                    processJoinField(field, dataModel.getName(), alias, joinFieldsInfo,
                             tablePriorities, outerSelect, scope, engineType);
                 } else if (semanticFieldsInfo.containsKey(semanticName) && semanticFieldsInfo.get(semanticName).size() > 1 && leftTable != null) {
                     // Field has same semantics in multiple tables
@@ -393,41 +393,84 @@ public class SqlBuilder {
      * Process a field that is part of join conditions
      */
     private void processJoinField(String field, String modelName, String alias,
-            List<ModelResp> dataModels, Map<String, Map<String, List<JoinFieldInfo>>> joinFieldsInfo,
+            Map<String, Map<String, List<JoinFieldInfo>>> joinFieldsInfo,
             Map<String, Integer> tablePriorities, Map<String, SqlNode> outerSelect,
             SqlValidatorScope scope, EngineType engineType) throws Exception {
 
         List<FieldInfo> fieldPairs = new ArrayList<>();
+        Set<String> processedModels = new HashSet<>();
 
         // Add the current field
         fieldPairs.add(new FieldInfo(modelName, field, false, tablePriorities.getOrDefault(modelName, 0)));
-        //System.out.println("modelName:" + modelName);
+        processedModels.add(modelName);
 
-        // Add fields from related models that have already been processed
-        List<JoinFieldInfo> modelJoinsInfo = joinFieldsInfo.get(modelName).get(field);
-        for (JoinFieldInfo joinInfo : modelJoinsInfo) {
+        // Get all related join relationships for this field
+        Set<JoinFieldInfo> allJoinInfos = new HashSet<>();
+        for (Map<String, List<JoinFieldInfo>> modelJoins : joinFieldsInfo.values()) {
+            if (modelJoins.containsKey(field)) {
+                allJoinInfos.addAll(modelJoins.get(field));
+            }
+        }
+
+        // Sort join infos by join order (left to right)
+        List<JoinFieldInfo> sortedJoinInfos = new ArrayList<>(allJoinInfos);
+        sortedJoinInfos.sort((a, b) -> {
+            // If one join is a prerequisite for another, it should come first
+            if (a.sourceModel.equals(b.targetModel)) return -1;
+            if (b.sourceModel.equals(a.targetModel)) return 1;
+            return 0;
+        });
+
+        // Process all related models in join order
+        for (JoinFieldInfo joinInfo : sortedJoinInfos) {
             String sourceModel = joinInfo.sourceModel;
             String sourceField = joinInfo.sourceField;
             String targetModel = joinInfo.targetModel;
             String targetField = joinInfo.targetField;
             String joinType = joinInfo.joinType;
 
-            for (ModelResp model : dataModels) {
-                if (model.getName().equals(targetModel)) {
-                    int priority = tablePriorities.getOrDefault(targetModel, 0);
-                    // Adjust priority based on join type
-                    if ("inner join".equalsIgnoreCase(joinType) && modelName.equals(sourceModel)) {
-                        priority -= 5; // Left table in INNER JOIN gets higher priority
-                    } else if ("left join".equalsIgnoreCase(joinType) && modelName.equals(sourceModel)) {
-                        priority -= 5; // Left table in LEFT JOIN gets higher priority
-                    } else if ("right join".equalsIgnoreCase(joinType) && modelName.equals(joinInfo.targetModel)) {
-                        priority += 5; // Right table in RIGHT JOIN gets higher priority
+            // Process both source and target models
+            for (String currentModel : Arrays.asList(sourceModel, targetModel)) {
+                if (!processedModels.contains(currentModel)) {
+                    int priority = tablePriorities.getOrDefault(currentModel, 0);
+                    // Adjust priority based on join type and position
+                    if ("inner join".equalsIgnoreCase(joinType)) {
+                        if (currentModel.equals(sourceModel)) {  // 左表
+                            priority += 10;  // 提高左表优先级
+                        } else {  // 右表
+                            priority -= 10;  // 降低右表优先级
+                        }
+                    } else if ("left join".equalsIgnoreCase(joinType)) {
+                        if (currentModel.equals(sourceModel)) {  // 左表
+                            priority += 10;  // 提高左表优先级
+                        } else {  // 右表
+                            priority -= 10;  // 降低右表优先级
+                        }
+                    } else if ("right join".equalsIgnoreCase(joinType)) {
+                        if (currentModel.equals(targetModel)) {  // 右表
+                            priority += 10;  // 提高右表优先级
+                        } else {  // 左表
+                            priority -= 10;  // 降低右表优先级
+                        }
+                    } else if ("full join".equalsIgnoreCase(joinType)) {
+                        if (currentModel.equals(sourceModel)) {  // 左表
+                            priority += 10;  // 提高左表优先级
+                        } else {  // 右表
+                            priority -= 10;  // 降低右表优先级
+                        }
                     }
-                    // if target model and field not exists, add it
-                    if (fieldPairs.stream().noneMatch(f -> f.modelName.equals(targetModel) && f.fieldName.equals(targetField))) {
-                        fieldPairs.add(new FieldInfo(targetModel, targetField, false, priority));
-                        //System.out.println("targetModel:" + targetModel);
+
+                    // 根据join顺序调整优先级
+                    if (currentModel.equals(sourceModel)) {
+                        priority += 5;  // 源表优先级更高
+                    } else {
+                        priority -= 5;  // 目标表优先级更低
                     }
+
+                    fieldPairs.add(new FieldInfo(currentModel, 
+                        currentModel.equals(sourceModel) ? sourceField : targetField, 
+                        false, priority));
+                    processedModels.add(currentModel);
                 }
             }
         }
@@ -456,7 +499,6 @@ public class SqlBuilder {
             );
 
             outerSelect.put(field, fieldNode);
-            log.info("processJoinField: {}", outerSelect);
         } else {
             // Just use current field
             outerSelect.put(field, SemanticNode.parse(alias + "." + field, scope, engineType));
