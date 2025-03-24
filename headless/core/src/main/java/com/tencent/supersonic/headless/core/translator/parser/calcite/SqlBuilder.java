@@ -112,7 +112,7 @@ public class SqlBuilder {
     }
 
     private boolean isGraphPathContainsAll(GraphPath<String, DefaultEdge> graphPath,
-            Set<String> vertex) {
+                                           Set<String> vertex) {
         Set<String> allVertex = Sets.newHashSet();
         for (DefaultEdge edge : graphPath.getEdgeList()) {
             allVertex.add(graphPath.getGraph().getEdgeSource(edge));
@@ -204,7 +204,7 @@ public class SqlBuilder {
 
                 // Determine if this is a join field
                 if (joinFieldsInfo.containsKey(dataModel.getName()) && joinFieldsInfo.get(dataModel.getName()).containsKey(field)) {
-                    processJoinField(field, dataModel.getName(), alias, joinFieldsInfo,
+                    processJoinField(field, dataModel.getName(), alias, joinFieldsInfo, dataModels,
                             tablePriorities, outerSelect, scope, engineType);
                 } else if (semanticFieldsInfo.containsKey(semanticName) && semanticFieldsInfo.get(semanticName).size() > 1 && leftTable != null) {
                     // Field has same semantics in multiple tables
@@ -394,7 +394,7 @@ public class SqlBuilder {
      */
     private void processJoinField(String field, String modelName, String alias,
             Map<String, Map<String, List<JoinFieldInfo>>> joinFieldsInfo,
-            Map<String, Integer> tablePriorities, Map<String, SqlNode> outerSelect,
+            Set<ModelResp> dataModels, Map<String, Integer> tablePriorities, Map<String, SqlNode> outerSelect,
             SqlValidatorScope scope, EngineType engineType) throws Exception {
 
         List<FieldInfo> fieldPairs = new ArrayList<>();
@@ -429,6 +429,11 @@ public class SqlBuilder {
             String targetField = joinInfo.targetField;
             String joinType = joinInfo.joinType;
 
+            // if sourceModel or targetModel is not in dataModels, skip
+            if (dataModels.stream().noneMatch(m -> m.getName().equalsIgnoreCase(sourceModel)) ||
+                    dataModels.stream().noneMatch(m -> m.getName().equalsIgnoreCase(targetModel))) {
+                continue;
+            }
             // Process both source and target models
             for (String currentModel : Arrays.asList(sourceModel, targetModel)) {
                 if (!processedModels.contains(currentModel)) {
@@ -467,9 +472,9 @@ public class SqlBuilder {
                         priority -= 5;  // 目标表优先级更低
                     }
 
-                    fieldPairs.add(new FieldInfo(currentModel, 
-                        currentModel.equals(sourceModel) ? sourceField : targetField, 
-                        false, priority));
+                    fieldPairs.add(new FieldInfo(currentModel,
+                            currentModel.equals(sourceModel) ? sourceField : targetField,
+                            false, priority));
                     processedModels.add(currentModel);
                 }
             }
@@ -670,8 +675,8 @@ public class SqlBuilder {
     }
 
     private SqlNode buildJoin(SqlNode leftNode, TableView leftTable, TableView rightTable,
-            Map<String, String> before, ModelResp dataModel, S2CalciteSchema schema,
-            SqlValidatorScope scope) throws Exception {
+                              Map<String, String> before, ModelResp dataModel, S2CalciteSchema schema,
+                              SqlValidatorScope scope) throws Exception {
         EngineType engineType = EngineType.fromString(schema.getOntology().getDatabase().getType());
         SqlNode condition =
                 getCondition(leftTable, rightTable, dataModel, schema, scope, engineType);
@@ -692,7 +697,7 @@ public class SqlBuilder {
     }
 
     private JoinRelation getMatchJoinRelation(Map<String, String> before, TableView tableView,
-            S2CalciteSchema schema) {
+                                              S2CalciteSchema schema) {
         JoinRelation matchJoinRelation = JoinRelation.builder().build();
         if (!CollectionUtils.isEmpty(schema.getJoinRelations())) {
             for (JoinRelation joinRelation : schema.getJoinRelations()) {
@@ -753,7 +758,7 @@ public class SqlBuilder {
     }
 
     private SqlNode getCondition(JoinRelation joinRelation, SqlValidatorScope scope,
-            EngineType engineType) throws Exception {
+                                 EngineType engineType) throws Exception {
         SqlNode condition = null;
         for (Triple<String, String, String> con : joinRelation.getJoinCondition()) {
             List<SqlNode> ons = new ArrayList<>();
@@ -774,7 +779,7 @@ public class SqlBuilder {
     }
 
     private SqlNode getCondition(TableView left, TableView right, ModelResp dataModel,
-            S2CalciteSchema schema, SqlValidatorScope scope, EngineType engineType)
+                                 S2CalciteSchema schema, SqlValidatorScope scope, EngineType engineType)
             throws Exception {
 
         Set<String> selectLeft = SemanticNode.getSelect(left.getTable());
