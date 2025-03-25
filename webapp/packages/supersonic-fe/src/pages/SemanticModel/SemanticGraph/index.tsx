@@ -21,7 +21,7 @@ import initToolBar from './components/ToolBar';
 import initTooltips from './components/ToolTips';
 import initContextMenu from './components/ContextMenu';
 // import initLegend from './components/Legend';
-import { SemanticNodeType } from '../enum';
+import { SemanticNodeType, StatusEnum } from '../enum';
 import G6 from '@antv/g6';
 import { ISemantic, IDataSource } from '../data';
 import NodeInfoDrawer from './components/NodeInfoDrawer';
@@ -31,7 +31,7 @@ import DeleteConfirmModal from './components/DeleteConfirmModal';
 import ClassModelTypeModal from '../components/ClassModelTypeModal';
 // import GraphToolBar from './components/GraphToolBar';
 import GraphLegend from './components/GraphLegend';
-import GraphLegendVisibleModeItem from './components/GraphLegendVisibleModeItem';
+import GraphLegendVisibleModeItem, { DisplayMode } from './components/GraphLegendVisibleModeItem';
 import ModelRelationFormDrawer from './components/ModelRelationFormDrawer';
 import ControlToolBar from './components/ControlToolBar';
 
@@ -77,8 +77,11 @@ const SemanticGraph: React.FC<Props> = ({}) => {
   const visibleModeOpenRef = useRef<boolean>(false);
   const [visibleModeOpen, setVisibleModeOpen] = useState<boolean>(false);
 
-  const graphShowTypeRef = useRef<SemanticNodeType>();
-  const [graphShowTypeState, setGraphShowTypeState] = useState<SemanticNodeType>();
+  const displayModeRef = useRef<DisplayMode>({ statusFilter: StatusEnum.ONLINE, contentType: '' });
+  const [displayModeState, setDisplayModeState] = useState<DisplayMode>({ statusFilter: StatusEnum.ONLINE, contentType: '' });
+
+  const graphShowTypeRef = useRef<SemanticNodeType | string | number>();
+  const [graphShowTypeState, setGraphShowTypeState] = useState<SemanticNodeType | string | number>();
 
   const [modelRelationDrawerOpen, setModelRelationDrawerOpen] = useState<boolean>(false);
   const [nodeModel, setNodeModel] = useState<{
@@ -130,9 +133,9 @@ const SemanticGraph: React.FC<Props> = ({}) => {
   const changeGraphData = (dataSourceList: ISemantic.IDomainSchemaRelaList): TreeGraphData => {
     const relationData = formatterRelationData({
       dataSourceList,
-      type: graphShowTypeRef.current,
       limit: 20,
       showDataSourceId: graphLegendDataSourceIds.current,
+      displayMode: displayModeRef.current,
     });
 
     const graphRootData = {
@@ -493,14 +496,80 @@ const SemanticGraph: React.FC<Props> = ({}) => {
     if (!graph && graphData) {
       const graphNodeList = flatGraphDataNode(graphData.children);
       const graphConfigKey = graphNodeList.length > 20 ? 'dendrogram' : 'mindmap';
-      // const graphConfigKey = 'mindmap';
-      // const graphConfigKey = 'dendrogram';
-      // getLegendDataFilterFunctions();
-      // const toolbar = initToolBar({ onSearch: handleSeachNode, onClick: handleToolBarClick });
       const tooltip = initTooltips();
       const contextMenu = initContextMenu({
         onMenuClick: handleContextMenuClick,
       });
+
+      // 注册多标签节点
+      G6.registerNode(
+        'modelNode',
+        {
+          drawShape(cfg, group) {
+            // 确保cfg.size有值，如果不是数组则转为数组
+            const size = cfg.size ? (Array.isArray(cfg.size) ? cfg.size : [cfg.size, cfg.size]) : [80, 40];
+            const width = size[0];
+            const height = size[1];
+            const x = -width / 2;
+            const y = -height / 2;
+            const keyShape = group.addShape('rect', {
+              attrs: {
+                x,
+                y,
+                width,
+                height,
+                radius: 4,
+                fill: cfg.style?.fill || '#eee',
+                stroke: cfg.style?.stroke || '#ccc',
+                lineWidth: cfg.style?.lineWidth || 1,
+              },
+              name: 'rect-shape',
+            });
+
+            // 添加状态文本
+            if (cfg.labels && cfg.labels.length > 0) {
+              cfg.labels.forEach(label => {
+                group.addShape('text', {
+                  attrs: {
+                    text: label.content,
+                    x: 0,
+                    y: 0,
+                    textAlign: 'center',
+                    textBaseline: 'middle',
+                    fill: label.style.fill,
+                    fontSize: label.style.fontSize,
+                    fontWeight: label.style.fontWeight,
+                  },
+                  name: 'status-text',
+                });
+              });
+            }
+
+            return keyShape;
+          },
+          // 更新节点，包括位置和配置的更新
+          update(cfg, node) {
+            const group = node.getContainer();
+            const shape = group.get('children')[0];
+            const style = cfg.style || {};
+
+            shape.attr({
+              fill: style.fill || '#eee',
+              stroke: style.stroke || '#ccc'
+            });
+
+            // 更新状态文本
+            const statusText = group.find(el => el.get('name') === 'status-text');
+            if (statusText && cfg.labels && cfg.labels.length > 0) {
+              statusText.attr({
+                text: cfg.labels[0].content || '',
+                fill: cfg.labels[0].style?.fill || '#333'
+              });
+            }
+          }
+        },
+        'rect',
+      );
 
       G6.registerNode(
         'rect-node',
@@ -516,12 +585,11 @@ const SemanticGraph: React.FC<Props> = ({}) => {
                 fill: '#fff',
                 stroke: '#5F95FF',
               },
-              // must be assigned in G6 3.3 and later versions. it can be any string you want, but should be unique in a custom item type
-              name: `anchor-point`, // the name, for searching by group.find(ele => ele.get('name') === 'anchor-point')
-              anchorPointIdx: 1, // flag the idx of the anchor-point circle
-              links: 0, // cache the number of edges connected to this shape
-              visible: false, // invisible by default, shows up when links > 1 or the node is in showAnchors state
-              draggable: true, // allow to catch the drag events on this shape
+              name: `anchor-point`,
+              anchorPointIdx: 1,
+              links: 0,
+              visible: false,
+              draggable: true,
             });
 
             group.addShape('circle', {
@@ -532,12 +600,11 @@ const SemanticGraph: React.FC<Props> = ({}) => {
                 fill: '#fff',
                 stroke: '#5F95FF',
               },
-              // must be assigned in G6 3.3 and later versions. it can be any string you want, but should be unique in a custom item type
-              name: `anchor-point`, // the name, for searching by group.find(ele => ele.get('name') === 'anchor-point')
-              anchorPointIdx: 2, // flag the idx of the anchor-point circle
-              links: 0, // cache the number of edges connected to this shape
-              visible: false, // invisible by default, shows up when links > 1 or the node is in showAnchors state
-              draggable: true, // allow to catch the drag events on this shape
+              name: `anchor-point`,
+              anchorPointIdx: 2,
+              links: 0,
+              visible: false,
+              draggable: true,
             });
           },
           setState(name, value, item) {
@@ -546,7 +613,6 @@ const SemanticGraph: React.FC<Props> = ({}) => {
                 .getContainer()
                 .findAll((ele) => ele.get('name') === 'anchor-point');
               anchorPoints.forEach((point) => {
-                // if (value || point.get('links') > 0) point.show();
                 if (value) point.show();
                 else point.hide();
               });
@@ -559,110 +625,12 @@ const SemanticGraph: React.FC<Props> = ({}) => {
       let sourceAnchorIdx: any;
       let targetAnchorIdx: any;
 
-      // graphRef.current = new G6.TreeGraph({
-      //   container: 'semanticGraph',
-      //   width,
-      //   height,
-      //   modes: {
-      //     default: [
-      //       // {
-      //       //   type: 'collapse-expand',
-      //       //   onChange: function onChange(item, collapsed) {
-      //       //     const data = item!.get('model');
-      //       //     data.collapsed = collapsed;
-      //       //     return true;
-      //       //   },
-      //       // },
-      //       // 'drag-node',
-      //       {
-      //         type: 'drag-node',
-      //         shouldBegin: (e) => {
-      //           if (e.target.get('name') === 'anchor-point') return false;
-      //           return true;
-      //         },
-      //       },
-      //       'drag-canvas',
-      //       {
-      //         type: 'create-edge',
-      //         trigger: 'drag', // set the trigger to be drag to make the create-edge triggered by drag
-      //         shouldBegin: (e) => {
-      //           // avoid beginning at other shapes on the node
-      //           if (e.target && e.target.get('name') !== 'anchor-point') return false;
-      //           sourceAnchorIdx = e.target.get('anchorPointIdx');
-      //           e.target.set('links', e.target.get('links') + 1); // cache the number of edge connected to this anchor-point circle
-      //           return true;
-      //         },
-      //         shouldEnd: (e) => {
-      //           // avoid ending at other shapes on the node
-      //           if (e.target && e.target.get('name') !== 'anchor-point') return false;
-      //           if (e.target) {
-      //             targetAnchorIdx = e.target.get('anchorPointIdx');
-      //             e.target.set('links', e.target.get('links') + 1); // cache the number of edge connected to this anchor-point circle
-      //             return true;
-      //           }
-      //           targetAnchorIdx = undefined;
-      //           return true;
-      //         },
-      //       },
-      //       // 'activate-relations',
-      //       {
-      //         type: 'zoom-canvas',
-      //         sensitivity: 0.3, // 设置缩放灵敏度，值越小，缩放越不敏感，默认值为 1
-      //       },
-      //       {
-      //         type: 'activate-relations',
-      //         trigger: 'mouseenter', // 触发方式，可以是 'mouseenter' 或 'click'
-      //         resetSelected: true, // 点击空白处时，是否取消高亮
-      //       },
-      //     ],
-      //   },
-      //   // defaultNode: {
-      //   //   size: 26,
-      //   //   anchorPoints: [
-      //   //     [0, 0.5],
-      //   //     [1, 0.5],
-      //   //   ],
-      //   //   labelCfg: {
-      //   //     position: 'right',
-      //   //     offset: 5,
-      //   //     style: {
-      //   //       stroke: '#fff',
-      //   //       lineWidth: 4,
-      //   //     },
-      //   //   },
-      //   // },
-
-      //   // defaultEdge: {
-      //   //   type: graphConfigMap[graphConfigKey].defaultEdge.type,
-      //   // },
-      //   defaultNode: {
-      //     type: 'rect-node',
-      //     style: {
-      //       fill: '#eee',
-      //       stroke: '#ccc',
-      //     },
-      //   },
-      //   defaultEdge: {
-      //     type: 'quadratic',
-      //     style: {
-      //       stroke: '#F6BD16',
-      //       lineWidth: 2,
-      //     },
-      //   },
-      //   layout: {
-      //     ...graphConfigMap[graphConfigKey].layout,
-      //   },
-      //   plugins: [tooltip, toolbar, contextMenu],
-      //   // plugins: [legend, tooltip, toolbar, contextMenu],
-      // });
-
       graphRef.current = new G6.TreeGraph({
         container: 'semanticGraph',
         width,
         height,
         modes: {
           default: [
-            // config the shouldBegin for drag-node to avoid node moving while dragging on the anchor-point circles
             {
               type: 'drag-node',
               shouldBegin: (e) => {
@@ -672,37 +640,30 @@ const SemanticGraph: React.FC<Props> = ({}) => {
             },
             'scroll-canvas',
             'drag-canvas',
-            // config the shouldBegin and shouldEnd to make sure the create-edge is began and ended at anchor-point circles
             {
               type: 'create-edge',
-              trigger: 'drag', // set the trigger to be drag to make the create-edge triggered by drag
+              trigger: 'drag',
               shouldBegin: (e) => {
-                // avoid beginning at other shapes on the node
                 if (e.target && e.target.get('name') !== 'anchor-point') return false;
                 sourceAnchorIdx = e.target.get('anchorPointIdx');
-                e.target.set('links', e.target.get('links') + 1); // cache the number of edge connected to this anchor-point circle
+                e.target.set('links', e.target.get('links') + 1);
                 return true;
               },
               shouldEnd: (e) => {
-                // avoid ending at other shapes on the node
                 if (e.target && e.target.get('name') !== 'anchor-point') return false;
                 if (e.target) {
                   targetAnchorIdx = e.target.get('anchorPointIdx');
-                  e.target.set('links', e.target.get('links') + 1); // cache the number of edge connected to this anchor-point circle
+                  e.target.set('links', e.target.get('links') + 1);
                   return true;
                 }
                 targetAnchorIdx = undefined;
                 return true;
               },
             },
-            // {
-            //   type: 'zoom-canvas',
-            //   sensitivity: 0.3, // 设置缩放灵敏度，值越小，缩放越不敏感，默认值为 1
-            // },
             {
               type: 'activate-relations',
-              trigger: 'mouseenter', // 触发方式，可以是 'mouseenter' 或 'click'
-              resetSelected: true, // 点击空白处时，是否取消高亮
+              trigger: 'mouseenter',
+              resetSelected: true,
             },
           ],
         },
@@ -712,11 +673,12 @@ const SemanticGraph: React.FC<Props> = ({}) => {
         plugins: [tooltip, contextMenu],
 
         defaultNode: {
-          type: 'rect-node',
+          type: 'modelNode',
           style: {
             fill: '#eee',
             stroke: '#ccc',
           },
+          size: [80, 40],
         },
         defaultEdge: {
           type: graphConfigMap[graphConfigKey].defaultEdge.type,
@@ -725,30 +687,6 @@ const SemanticGraph: React.FC<Props> = ({}) => {
 
       graphRef.current.set('initGraphData', graphData);
       graphRef.current.set('initDataSource', dataSourceRef.current);
-
-      // const legendCanvas = legend._cfgs.legendCanvas;
-
-      // legend模式事件方法bindEvents会有点击图例空白清空选中的逻辑，在注册click事件前，先将click事件队列清空；
-      // legend._cfgs.legendCanvas._events.click = [];
-      // legendCanvas.on('click', () => {
-      //   // @ts-ignore findLegendItemsByState为Legend的 private方法，忽略ts校验
-      //   const activedNodeList = legend.findLegendItemsByState('active');
-      //   // 获取当前所有激活节点后进行数据遍历筛选；
-      //   const activedNodeIds = activedNodeList.map((item: IGroup) => {
-      //     return item.cfg.id;
-      //   });
-      //   const graphDataClone = cloneDeep(graphData);
-      //   const filterGraphDataChildren = Array.isArray(graphDataClone?.children)
-      //     ? graphDataClone.children.reduce((children: TreeGraphData[], item: TreeGraphData) => {
-      //         if (activedNodeIds.includes(item.id)) {
-      //           children.push(item);
-      //         }
-      //         return children;
-      //       }, [])
-      //     : [];
-      //   graphDataClone.children = filterGraphDataChildren;
-      //   refreshGraphData(graphDataClone);
-      // });
 
       graphRef.current.node(function (node: NodeConfig) {
         return getNodeConfigByType(node, {
@@ -775,40 +713,6 @@ const SemanticGraph: React.FC<Props> = ({}) => {
           graphRef.current.setItemState(sourceNode, 'showAnchors', false);
           graphRef.current.setItemState(targetnode, 'showAnchors', false);
         }
-
-        // update the curveOffset for parallel edges
-        // const edges = graphRef.current.save().edges;
-
-        // const savedGraph = graphRef.current.save();
-        // const edges = [];
-
-        // // savedGraph.children.forEach((root) => {
-        // traverse(savedGraph, null);
-        // // });
-
-        // function traverse(node, parent) {
-        //   if (Array.isArray(node.children)) {
-        //     node.children.forEach((child) => {
-        //       if (child.type === 'edge') {
-        //         // 假设边的节点类型为 'edge'
-        //         edges.push({
-        //           source: parent ? parent.id : null,
-        //           target: child.id,
-        //           // 其他边的属性
-        //         });
-        //       }
-        //       traverse(child, node);
-        //     });
-        //   }
-        // }
-
-        // // processParallelEdgesOnAnchorPoint(edges);
-        // graphRef.current.getEdges().forEach((edge, i) => {
-        //   graphRef.current.updateItem(edge, {
-        //     curveOffset: edges[i].curveOffset,
-        //     curvePosition: edges[i].curvePosition,
-        //   });
-        // });
       });
 
       graphRef.current.on('afteradditem', (e) => {
@@ -880,12 +784,7 @@ const SemanticGraph: React.FC<Props> = ({}) => {
       graphRef.current.data(graphData);
       graphRef.current.render();
 
-      // const nodeCount = graphRef.current.getNodes().length;
-      // if (nodeCount < 10) {
       lessNodeZoomRealAndMoveCenter();
-      // } else {
-      // graphRef.current.fitView([80, 80]);
-      // }
 
       graphRef.current.on('node:click', (evt: any) => {
         const item = evt.item; // 被操作的节点 item
@@ -956,7 +855,6 @@ const SemanticGraph: React.FC<Props> = ({}) => {
     graphRef.current.changeData(graphRootData);
     const rootNode = graphRef.current.findById('root');
     graphRef.current.hideItem(rootNode);
-    // graphRef.current.fitView();
     drawerEdgeFromConfig(relationConfig);
     lessNodeZoomRealAndMoveCenter();
   };
@@ -998,9 +896,9 @@ const SemanticGraph: React.FC<Props> = ({}) => {
         onSearch={(text) => {
           handleSeachNode(text);
         }}
-        onShowTypeChange={(showType) => {
-          graphShowTypeRef.current = showType;
-          setGraphShowTypeState(showType);
+        onShowTypeChange={(newDisplayMode) => {
+          displayModeRef.current = newDisplayMode;
+          setDisplayModeState(newDisplayMode);
           const rootGraphData = changeGraphData(dataSourceRef.current);
           refreshGraphData(rootGraphData);
         }}
@@ -1115,9 +1013,11 @@ const SemanticGraph: React.FC<Props> = ({}) => {
           onOkClick={() => {
             setConfirmModalOpenState(false);
             updateGraphData();
-            graphShowTypeState === SemanticNodeType.DIMENSION
+            displayModeState.contentType === SemanticNodeType.DIMENSION
               ? MrefreshDimensionList({ modelId })
-              : MrefreshMetricList({ modelId });
+              : displayModeState.contentType === SemanticNodeType.METRIC 
+              ? MrefreshMetricList({ modelId })
+              : null;
           }}
           onCancelClick={() => {
             setConfirmModalOpenState(false);

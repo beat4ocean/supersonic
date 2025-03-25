@@ -7,7 +7,7 @@ import {
   OneToOneOutlined,
 } from '@ant-design/icons';
 import { FloatButton, Tooltip, Input } from 'antd';
-import GraphLegendVisibleModeItem from '../GraphLegendVisibleModeItem';
+import GraphLegendVisibleModeItem, { DisplayMode } from '../GraphLegendVisibleModeItem';
 import { SemanticNodeType } from '../../../enum';
 import styles from './style.less';
 
@@ -16,7 +16,7 @@ const { Search } = Input;
 type Props = {
   graph: any;
   onSearch?: (text: string) => void;
-  onShowTypeChange?: (nodeType: SemanticNodeType) => void;
+  onShowTypeChange?: (displayMode: DisplayMode) => void;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   onAutoZoom?: () => void;
@@ -43,20 +43,17 @@ const ControlToolBar: React.FC<Props> = ({
   const zoomInRatio = 1 + sensitivity;
 
   return (
-    <div className={styles.graphControlContent}>
-      <FloatButton.Group
-        shape="square"
-        style={{ left: 25, top: 25, height: 310, position: 'absolute' }}
-      >
+    <div className={styles.controlToolBarPanel}>
+      <FloatButton.Group type="primary" style={{ left: 260 }}>
         <Tooltip
           overlayClassName={styles.overlayClassName}
           title={
-            <Search
-              placeholder="请输入指标/维度名称"
-              allowClear
-              onSearch={(text: string) => {
-                onSearch?.(text);
+            <Input.Search
+              placeholder="输入搜索内容"
+              onSearch={(value) => {
+                onSearch?.(value);
               }}
+              enterButton
               style={{ width: 250 }}
             />
           }
@@ -69,8 +66,8 @@ const ControlToolBar: React.FC<Props> = ({
           overlayClassName={styles.overlayClassName}
           title={
             <GraphLegendVisibleModeItem
-              onChange={(nodeType: SemanticNodeType) => {
-                onShowTypeChange?.(nodeType);
+              onChange={(displayMode: DisplayMode) => {
+                onShowTypeChange?.(displayMode);
               }}
             />
           }

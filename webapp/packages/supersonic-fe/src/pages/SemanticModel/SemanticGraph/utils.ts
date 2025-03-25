@@ -1,6 +1,7 @@
 import { ISemantic } from '../data';
-import { SemanticNodeType } from '../enum';
+import { SemanticNodeType, StatusEnum } from '../enum';
 import { TreeGraphData } from '@antv/g6-core';
+import { DisplayMode } from './components/GraphLegendVisibleModeItem';
 
 export const typeConfigs = {
   datasource: {
@@ -66,41 +67,70 @@ export const getMetricChildren = (
 export const formatterRelationData = (params: {
   dataSourceList: ISemantic.IDomainSchemaRelaList;
   limit?: number;
-  type?: SemanticNodeType;
+  displayMode?: DisplayMode;
   showDataSourceId?: string[];
 }): TreeGraphData[] => {
-  const { type, dataSourceList, limit, showDataSourceId } = params;
+  const { displayMode, dataSourceList, limit, showDataSourceId } = params;
+  const contentType = displayMode?.contentType;
+  const statusFilter = displayMode?.statusFilter;
+
   const relationData = dataSourceList.reduce(
     (relationList: TreeGraphData[], item: ISemantic.IDomainSchemaRelaItem) => {
       const { model, dimensions, metrics } = item;
-      const { id } = model;
+      const { id, status, name } = model;
+
+      // 如果启用了状态过滤，且当前模型状态不是启用状态，则跳过
+      if (statusFilter === StatusEnum.ONLINE && status !== StatusEnum.ONLINE) {
+        return relationList;
+      }
+
       const dataSourceNodeId = `${SemanticNodeType.DATASOURCE}-${id}`;
       let childrenList = [];
-      if (type === SemanticNodeType.METRIC) {
+
+      if (contentType === SemanticNodeType.METRIC) {
         childrenList = getMetricChildren(metrics, dataSourceNodeId, limit);
       }
-      if (type === SemanticNodeType.DIMENSION) {
+      else if (contentType === SemanticNodeType.DIMENSION) {
         childrenList = getDimensionChildren(dimensions, dataSourceNodeId, limit);
       }
-      if (!type) {
+      else if (contentType === 'MODEL_ONLY') {
+        // 仅模型名称，不添加子节点
+        childrenList = [];
+      }
+      else if (!contentType || contentType === '') {
         const dimensionList = getDimensionChildren(dimensions, dataSourceNodeId, limit);
         const metricList = getMetricChildren(metrics, dataSourceNodeId, limit);
         childrenList = [...dimensionList, ...metricList];
       }
+
+      // 根据状态设置不同的样式
+      let nodeStyle = {
+        lineWidth: 2,
+        fill: '#BDEFDB',
+        stroke: '#5AD8A6',
+      };
+
+      // 未启用状态使用灰色
+      if (status !== StatusEnum.ONLINE) {
+        nodeStyle = {
+          lineWidth: 2,
+          fill: '#f5f5f5',
+          stroke: '#d9d9d9',
+        };
+      }
+
       if (!showDataSourceId || showDataSourceId.includes(dataSourceNodeId)) {
         relationList.push({
           ...model,
+          name: name,
+          statusText: status === StatusEnum.ONLINE ? '已启用' : '未启用',
           legendType: dataSourceNodeId,
           id: dataSourceNodeId,
           uid: id,
           nodeType: SemanticNodeType.DATASOURCE,
           size: 40,
           children: [...childrenList],
-          style: {
-            lineWidth: 2,
-            fill: '#BDEFDB',
-            stroke: '#5AD8A6',
-          },
+          style: nodeStyle,
         });
       }
       return relationList;
@@ -123,37 +153,33 @@ export const loopNodeFindDataSource: any = (node: any) => {
 };
 
 export const getNodeConfigByType = (nodeData: any, defaultConfig = {}) => {
-  const { nodeType } = nodeData;
+  const { nodeType, statusText } = nodeData;
   const labelCfg = { style: { fill: '#3c3c3c' } };
+
   switch (nodeType) {
     case SemanticNodeType.DATASOURCE: {
       return {
         ...defaultConfig,
         labelCfg: { position: 'bottom', ...labelCfg },
-        // type: 'rect',
+        labels: [
+          {
+            position: 'center',
+            content: statusText || '',
+            style: {
+              fill: statusText === '已启用' ? '#52c41a' : '#bfbfbf',
+              fontSize: 12,
+              fontWeight: 500
+            }
+          }
+        ],
         size: [80, 40],
-        // linkPoints: {
-        //   // top: true,
-        //   right: true,
-        //   // bottom: true,
-        //   left: true,
-        //   /* linkPoints' size, 8 by default */
-        //   //   size: 5,
-        //   /* linkPoints' style */
-        //   //   fill: '#ccc',
-        //   //   stroke: '#333',
-        //   //   lineWidth: 2,
-        // },
-        // style: {
-        //   fill: '#eee',
-        //   stroke: '#ccc',
-        // },
       };
     }
     case SemanticNodeType.DIMENSION:
       return {
         ...defaultConfig,
         labelCfg: { position: 'right', ...labelCfg },
+        size: [10, 10],
       };
     case SemanticNodeType.METRIC:
       return {
@@ -164,9 +190,13 @@ export const getNodeConfigByType = (nodeData: any, defaultConfig = {}) => {
           stroke: '#ffe58f',
         },
         labelCfg: { position: 'right', ...labelCfg },
+        size: [10, 10],
       };
     default:
-      return defaultConfig;
+      return {
+        ...defaultConfig,
+        size: [10, 10],
+      };
   }
 };
 
