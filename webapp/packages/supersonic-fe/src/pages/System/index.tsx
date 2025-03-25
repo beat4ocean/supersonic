@@ -236,13 +236,17 @@ const System: React.FC = () => {
                   excuteDepConfig(valueKey, values);
                 }}
               >
-                <FormItem name="admins" label="管理员">
-                  <SelectTMEPerson placeholder="请邀请团队成员" />
-                </FormItem>
-
-                <Divider />
-
                 <Space direction="vertical" style={{ width: '100%' }} size={35}>
+                  <ProCard
+                    title={<span style={{ color: '#296df3' }}>管理员配置</span>}
+                    bordered
+                    id="admin"
+                  >
+                    <FormItem name="admins" label="管理员列表">
+                      <SelectTMEPerson placeholder="请邀请团队成员" />
+                    </FormItem>
+                  </ProCard>
+
                   {Object.keys(systemConfig).map((key: string) => {
                     const itemList = systemConfig[key];
                     return (
